@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int     @id @default(autoincrement())
+  username     String  @unique
+  email        String  @unique
+  role         String
+  isActive     Boolean @default(true)
+  passwordHash String
+  school       School  @relation(fields: [schoolId], references: [id])
+  schoolId     Int
+}
+
+model School {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  contacts String
+  users    User[]
+  students Student[]
+  grades   Grade[]
+  terms    Term[]
+}
+
+model Grade {
+  id       Int       @id @default(autoincrement())
+  name     String
+  schoolId Int
+  school   School    @relation(fields: [schoolId], references: [id])
+  streams  Stream[]
+  students Student[]
+}
+
+model Stream {
+  id       Int       @id @default(autoincrement())
+  name     String
+  gradeId  Int
+  grade    Grade     @relation(fields: [gradeId], references: [id])
+  students Student[]
+}
+
+model Student {
+  studentId      String    @id
+  fullName       String
+  dob            DateTime
+  gender         String
+  guardianName   String
+  contactNumber1 String
+  contactNumber2 String
+  gradeId        Int
+  streamId       Int
+  schoolId       Int
+  cfBalance      Float     @default(0.0)
+  isActive       Boolean   @default(true)
+  leftDate       DateTime?
+  currentTermId  Int?
+  year           Int
+  school         School    @relation(fields: [schoolId], references: [id])
+  grade          Grade     @relation(fields: [gradeId], references: [id])
+  stream         Stream    @relation(fields: [streamId], references: [id])
+  currentTerm    Term?     @relation(fields: [currentTermId], references: [id])
+}
+
+model Term {
+  id        Int       @id @default(autoincrement())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  year      Int
+  current   Boolean   @default(false)
+  schoolId  Int
+  school    School    @relation(fields: [schoolId], references: [id])
+  students  Student[]
+}
