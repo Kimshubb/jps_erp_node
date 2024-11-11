@@ -15,6 +15,7 @@ import {
   datePickersCustomizations,
   treeViewCustomizations,
 } from './theme/customizations';
+import Copyright from '../components/Copyright';
 
 const xThemeComponents = {
   ...chartsCustomizations,
@@ -53,6 +54,7 @@ export default function Dashboard(props) {
             <Header />
             <MainGrid />
           </Stack>
+          <Copyright />
         </Box>
       </Box>
     </AppTheme>

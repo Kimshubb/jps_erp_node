@@ -1,9 +1,11 @@
 import React from 'react';
+import AppTheme from './shared-theme/AppTheme';
 
 function App() {
   return (
     <div className="App">
-      <h1>Hello World</h1>
+      <AppTheme />
+      <h1>App</h1>
     </div>
   );
 }
