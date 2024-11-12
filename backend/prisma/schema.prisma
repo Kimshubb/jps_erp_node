@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
 
 generator client {
   provider = "prisma-client-js"
@@ -14,73 +10,234 @@ datasource db {
 }
 
 model User {
-  id           Int     @id @default(autoincrement())
-  username     String  @unique
-  email        String  @unique
-  role         String
-  isActive     Boolean @default(true)
-  passwordHash String
-  school       School  @relation(fields: [schoolId], references: [id])
-  schoolId     Int
+  id             Int             @id @default(autoincrement())
+  username       String          @unique @db.VarChar(20)
+  email          String          @unique @db.VarChar(120)
+  role           String          @db.VarChar(20)
+  passwordHash   String          @map("password_hash") @db.VarChar(256)
+  schoolId       Int             @map("school_id")
+  isActive       Boolean         @default(true)
+  school         School          @relation(fields: [schoolId], references: [id])
+  audits         Audit[]
+  teacherProfile TeacherProfile?
+
+  @@index([username])
+  @@index([email])
 }
 
 model School {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  contacts String
-  users    User[]
-  students Student[]
-  grades   Grade[]
-  terms    Term[]
+  id               Int             @id @default(autoincrement())
+  name             String          @db.VarChar(100)
+  contacts         String          @db.VarChar(100)
+  feeStructures    FeeStructure[]
+  users           User[]
+  students        Student[]
+  feePayments     FeePayment[]
+  audits          Audit[]
+  additionalFees  AdditionalFee[]
+  grades          Grade[]
+  teachers        TeacherProfile[]
+  timetableEntries TimeTable[]
+  terms           Term[]
 }
 
 model Grade {
-  id       Int       @id @default(autoincrement())
-  name     String
-  schoolId Int
-  school   School    @relation(fields: [schoolId], references: [id])
-  streams  Stream[]
-  students Student[]
+  id            Int           @id @default(autoincrement())
+  name          String        @db.VarChar(20)
+  schoolId      Int           @map("school_id")
+  school        School        @relation(fields: [schoolId], references: [id])
+  streams       Stream[]
+  feeStructure  FeeStructure?
+  students      Student[]
+  subjects      Subject[]
 }
 
 model Stream {
-  id       Int       @id @default(autoincrement())
-  name     String
-  gradeId  Int
-  grade    Grade     @relation(fields: [gradeId], references: [id])
-  students Student[]
+  id               Int         @id @default(autoincrement())
+  name             String      @db.VarChar(20)
+  gradeId          Int         @map("grade_id")
+  grade            Grade       @relation(fields: [gradeId], references: [id])
+  students         Student[]
+  lessons          Lesson[]
+  timetableEntries TimeTable[]
+}
+
+model FeeStructure {
+  id          Int     @id @default(autoincrement())
+  tuitionFee  Float   @map("tuition_fee")
+  assBooks    Float   @map("ass_books")
+  diaryFee    Float   @map("diary_fee")
+  activityFee Float   @map("activity_fee")
+  others      Float
+  schoolId    Int     @map("school_id")
+  termId      Int     @map("term_id")
+  gradeId     Int     @unique @map("grade_id")
+  school      School  @relation(fields: [schoolId], references: [id])
+  term        Term    @relation(fields: [termId], references: [id])
+  grade       Grade   @relation(fields: [gradeId], references: [id])
+
+  @@unique([schoolId, gradeId], name: "unique_school_grade")
+}
+
+model AdditionalFee {
+  id        Int       @id @default(autoincrement())
+  feeName   String    @map("fee_name") @db.VarChar(100)
+  amount    Float
+  schoolId  Int       @map("school_id")
+  school    School    @relation(fields: [schoolId], references: [id])
+  students  Student[] 
 }
 
 model Student {
-  studentId      String    @id
-  fullName       String
-  dob            DateTime
-  gender         String
-  guardianName   String
-  contactNumber1 String
-  contactNumber2 String
-  gradeId        Int
-  streamId       Int
-  schoolId       Int
-  cfBalance      Float     @default(0.0)
-  isActive       Boolean   @default(true)
-  leftDate       DateTime?
-  currentTermId  Int?
+  id             String         @id @db.VarChar(10)
+  fullName       String         @map("full_name") @db.VarChar(100)
+  dob            DateTime       @db.Date
+  gender         String         @db.VarChar(10)
+  guardianName   String         @map("guardian_name") @db.VarChar(100)
+  contactNumber1 String         @map("contact_number1") @db.VarChar(20)
+  contactNumber2 String         @map("contact_number2") @db.VarChar(20)
+  gradeId        Int           @map("grade_id")
+  streamId       Int           @map("stream_id")
+  schoolId       Int           @map("school_id")
+  cfBalance      Float         @default(0.0) @map("cf_balance")
+  active         Boolean       @default(true)
+  leftDate       DateTime?     @map("left_date") @db.Date
+  currentTermId  Int?          @map("current_term_id")
   year           Int
-  school         School    @relation(fields: [schoolId], references: [id])
-  grade          Grade     @relation(fields: [gradeId], references: [id])
-  stream         Stream    @relation(fields: [streamId], references: [id])
-  currentTerm    Term?     @relation(fields: [currentTermId], references: [id])
+  school         School        @relation(fields: [schoolId], references: [id])
+  grade          Grade         @relation(fields: [gradeId], references: [id])
+  stream         Stream        @relation(fields: [streamId], references: [id])
+  feePayments    FeePayment[]
+  additionalFees AdditionalFee[]
+  currentTerm    Term?         @relation("CurrentTermStudents", fields: [currentTermId], references: [id])
+  attendances    Attendance[]
+  performances   Performance[]
+}
+
+model FeePayment {
+  id               Int              @id @default(autoincrement())
+  method           String           @db.VarChar(50)
+  amount           Float
+  payDate         DateTime         @map("pay_date") @db.Date
+  code            String?          @unique @db.VarChar(20)
+  balance         Float
+  schoolId        Int              @map("school_id")
+  studentId       String           @map("student_id") @db.VarChar(10)
+  termId          Int              @map("term_id")
+  term            Term             @relation(fields: [termId], references: [id])
+  school          School           @relation(fields: [schoolId], references: [id])
+  student         Student          @relation(fields: [studentId], references: [id])
+  mpesaTransaction MpesaTransaction? @relation(fields: [code], references: [code])
+}
+
+model MpesaTransaction {
+  id          Int          @id @default(autoincrement())
+  code        String       @unique @db.VarChar(20)
+  amount      Float
+  verified    Boolean      @default(false)
+  feePayment  FeePayment?
+}
+
+model BankStatement {
+  id       Int    @id @default(autoincrement())
+  filename String @db.VarChar(120)
 }
 
 model Term {
-  id        Int       @id @default(autoincrement())
-  name      String
-  startDate DateTime
-  endDate   DateTime
-  year      Int
-  current   Boolean   @default(false)
-  schoolId  Int
-  school    School    @relation(fields: [schoolId], references: [id])
-  students  Student[]
+  id            Int            @id @default(autoincrement())
+  name          String         @db.VarChar(50)
+  startDate     DateTime       @map("start_date") @db.Date
+  endDate       DateTime       @map("end_date") @db.Date
+  year          Int
+  current       Boolean        @default(false)
+  schoolId      Int           @map("school_id")
+  school        School        @relation(fields: [schoolId], references: [id])
+  students      Student[]      @relation("CurrentTermStudents")
+  feePayments   FeePayment[]
+  feeStructures FeeStructure[]
+}
+
+model Audit {
+  id        Int      @id @default(autoincrement())
+  action    String   @db.VarChar(50)
+  details   String   @db.VarChar(100)
+  timestamp DateTime @default(now())
+  schoolId  Int      @map("school_id")
+  userId    Int      @map("user_id")
+  school    School   @relation(fields: [schoolId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model TeacherProfile {
+  id               Int        @id @default(autoincrement())
+  userId           Int        @unique @map("user_id")
+  schoolId         Int        @map("school_id")
+  user             User       @relation(fields: [userId], references: [id])
+  school           School     @relation(fields: [schoolId], references: [id])
+  subjects         Subject[]
+  lessons          Lesson[]
+  attendances      Attendance[]
+  timetableEntries TimeTable[]
+}
+
+model Subject {
+  id               Int             @id @default(autoincrement())
+  name             String          @db.VarChar(50)
+  gradeId          Int            @map("grade_id")
+  grade            Grade          @relation(fields: [gradeId], references: [id])
+  teachers         TeacherProfile[]
+  lessons          Lesson[]
+  performances     Performance[]
+  timetableEntries TimeTable[]
+}
+
+model TimeTable {
+  id          Int            @id @default(autoincrement())
+  dayOfWeek   String         @map("day_of_week") @db.VarChar(10)
+  startTime   DateTime       @map("start_time") @db.Time
+  endTime     DateTime       @map("end_time") @db.Time
+  teacherId   Int           @map("teacher_id")
+  subjectId   Int           @map("subject_id")
+  streamId    Int           @map("stream_id")
+  schoolId    Int           @map("school_id")
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [id])
+  subject     Subject       @relation(fields: [subjectId], references: [id])
+  stream      Stream        @relation(fields: [streamId], references: [id])
+  school      School        @relation(fields: [schoolId], references: [id])
+}
+
+model Lesson {
+  id          Int            @id @default(autoincrement())
+  title       String         @db.VarChar(100)
+  content     String         @db.Text
+  date        DateTime       @db.Date
+  teacherId   Int           @map("teacher_id")
+  subjectId   Int           @map("subject_id")
+  streamId    Int           @map("stream_id")
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [id])
+  subject     Subject       @relation(fields: [subjectId], references: [id])
+  stream      Stream        @relation(fields: [streamId], references: [id])
+  attendances Attendance[]
+}
+
+model Attendance {
+  id        Int            @id @default(autoincrement())
+  date      DateTime       @db.Date
+  status    String         @db.VarChar(20)
+  studentId String         @map("student_id") @db.VarChar(10)
+  teacherId Int           @map("teacher_id")
+  lessonId  Int           @map("lesson_id")
+  student   Student       @relation(fields: [studentId], references: [id])
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
+  lesson    Lesson        @relation(fields: [lessonId], references: [id])
+}
+
+model Performance {
+  id        Int      @id @default(autoincrement())
+  score     Float
+  date      DateTime @db.Date
+  studentId String   @map("student_id") @db.VarChar(10)
+  subjectId Int     @map("subject_id")
+  student   Student  @relation(fields: [studentId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id])
 }
