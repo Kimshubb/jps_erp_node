@@ -27,7 +27,7 @@ model User {
 
 model School {
   id               Int             @id @default(autoincrement())
-  name             String          @db.VarChar(100)
+  name             String          @unique @db.VarChar(100)
   contacts         String          @db.VarChar(100)
   feeStructures    FeeStructure[]
   users           User[]

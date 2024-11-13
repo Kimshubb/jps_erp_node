@@ -1,0 +1,49 @@
+:root {
+    --primary-color: #116466;
+    --secondary-color: #D1E8E2;
+    --light-color: #F1F1F2;
+    --dark-color: #343a40;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    background-color: var(--light-color);
+    color: var(--dark-color);
+  }
+  
+  .feature-icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+  }
+  
+  .testimonial-section {
+    background-color: var(--primary-color);
+    color: var(--light-color);
+    padding: 50px 0;
+  }
+  
+  .testimonial-slide img {
+    max-width: 100px;
+    border-radius: 50%;
+    margin-bottom: 20px;
+  }
+  
+  .pricing-plan {
+    border: 1px solid var(--secondary-color);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #fff;
+  }
+  
+  .faq-question {
+    cursor: pointer;
+  }
+  
+  footer {
+    background-color: var(--dark-color);
+    color: var(--light-color);
+    padding: 20px 0;
+    text-align: center;
+    margin-top: 50px;
+  }

@@ -211,4 +211,4 @@ const toggleStudentStatus = async (req, res) => {
 };
 
 
-module.exports = { getStudents, addStudent, updateStudent, toggleStudentStatus };
+module.exports = {getStudents, addStudent, updateStudent, toggleStudentStatus};

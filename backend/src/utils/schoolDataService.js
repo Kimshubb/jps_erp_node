@@ -1,4 +1,4 @@
-const prisma = require('../utils/prismaClient');
+const prisma = require('./prismaClient');
 
 class SchoolDataService {
     constructor(schoolId) {
@@ -110,6 +110,27 @@ class SchoolDataService {
         });
         return result._sum.amount || 0;
     }
+     /**
+     * Get the school details
+     * @returns {Promise<object>} School object
+     */
+    async getSchoolDetails() {
+        return prisma.school.findUnique({
+            where: { id: this.schoolId }
+        });
+    }
+    /**
+     * Get the school details by userId
+     * @param {number} userId 
+     * @returns {Promise<object>} School object
+     */
+    async getSchoolByUserId(userId) {
+        return prisma.school.findFirst({
+            where: { users: { some: { id: userId } } }
+        });
+    }
+
+
 }
 
 module.exports = SchoolDataService;

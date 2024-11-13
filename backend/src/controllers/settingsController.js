@@ -1,6 +1,5 @@
-const { validationResult, check } = require('express-validator');
-const prisma = require('../utils/prismaClient'); // Assuming you're using Prisma for the database
-const { body } = require('express-validator');
+//src/controllers/settingsController.js
+const prisma = require('../utils/prismaClient');
 
 // GET and POST route handler
 const manageTerms = async (req, res) => {

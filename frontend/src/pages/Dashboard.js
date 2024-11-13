@@ -1,62 +1,68 @@
-import * as React from 'react';
+// src/pages/Dashboard.js
+import React, { useEffect, useState } from 'react';
+import { Box, Container, CircularProgress, Alert } from '@mui/material';
+import Sidebar from '../components/Sidebar';
+import Topbar from '../components/TopBar';
+import DashboardCards from '../components/DashboardCards';
+import axiosInstance from '../utils/axiosInstance';
 
-import { alpha } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import AppNavbar from './components/AppNavbar';
-import Header from './components/Header';
-import MainGrid from './components/MainGrid';
-import SideMenu from './components/SideMenu';
-import AppTheme from '../shared-theme/AppTheme';
-import {
-  chartsCustomizations,
-  dataGridCustomizations,
-  datePickersCustomizations,
-  treeViewCustomizations,
-} from './theme/customizations';
-import Copyright from '../components/Copyright';
+const Dashboard = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const xThemeComponents = {
-  ...chartsCustomizations,
-  ...dataGridCustomizations,
-  ...datePickersCustomizations,
-  ...treeViewCustomizations,
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await axiosInstance.get('/api/dashboard');
+        console.log('Dashboard data received:', response.data);
+        setData(response.data);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setError(error.response?.data?.message || 'Failed to load dashboard data');
+        // If unauthorized, redirect to login
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+      }
+  } finally {
+      setLoading(false);
+  }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+            <CircularProgress />
+        </Box>
+    );
+  }
+
+  if (error) {
+    return (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+            <Alert severity="error">{error}</Alert>
+        </Box>
+    );
+  }
+
+  return (
+    <Box display="flex">
+      <Sidebar />
+      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}>
+        <Topbar />
+        <Container>
+            {data && <DashboardCards data={data.data} />}
+        </Container>
+      </Box>
+    </Box>
+  );
 };
 
-export default function Dashboard(props) {
-  return (
-    <AppTheme {...props} themeComponents={xThemeComponents}>
-      <CssBaseline enableColorScheme />
-      <Box sx={{ display: 'flex' }}>
-        <SideMenu />
-        <AppNavbar />
-        {/* Main content */}
-        <Box
-          component="main"
-          sx={(theme) => ({
-            flexGrow: 1,
-            backgroundColor: theme.vars
-              ? `rgba(${theme.vars.palette.background.defaultChannel} / 1)`
-              : alpha(theme.palette.background.default, 1),
-            overflow: 'auto',
-          })}
-        >
-          <Stack
-            spacing={2}
-            sx={{
-              alignItems: 'center',
-              mx: 3,
-              pb: 5,
-              mt: { xs: 8, md: 0 },
-            }}
-          >
-            <Header />
-            <MainGrid />
-          </Stack>
-          <Copyright />
-        </Box>
-      </Box>
-    </AppTheme>
-  );
-}
+export default Dashboard;

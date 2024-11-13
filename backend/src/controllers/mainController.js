@@ -2,50 +2,84 @@
 const SchoolDataService = require('../utils/SchoolDataService');
 
 const dashboard = async (req, res) => {
-    const { username, schoolName, schoolId } = req.user;
+    console.log("dashboard - req.user:", req.user);
+    
+    // Updated check to match the authentication middleware structure
+    if (!req.user || typeof req.user.schoolId !== 'number') {
+        console.log("Invalid or missing schoolId in user object:", req.user);
+        return res.status(401).json({ message: 'User not properly authenticated' });
+    }
+
+    // Destructure all relevant user info
+    const { username, userId, role, schoolId } = req.user;
 
     try {
-        // Instantiate the SchoolDataService class with the schoolId
+        // Initialize SchoolDataService with the schoolId from authenticated user
         const schoolDataService = new SchoolDataService(schoolId);
 
-        // Fetch data
-        const currentTerm = await schoolDataService.getCurrentTerm();
-        const totalActiveStudents = await schoolDataService.getActiveStudents(currentTerm.id);
-        const totalInactiveStudentsYear = await schoolDataService.getInactiveStudentsYear(new Date().getFullYear());
-        const totalInactiveStudentsTerm = await schoolDataService.getInactiveStudentsTerm(currentTerm.id);
-        const totalPaidViaCashToday = await schoolDataService.getPaidViaMethodToday('Cash');
-        const totalBankedToday = await schoolDataService.getPaidViaMethodToday('Bank');
-        const recentPayments = await schoolDataService.getRecentPayments(10);
-
-        // Log the values to ensure they are defined
-        console.log("totalActiveStudents:", totalActiveStudents);
-        console.log("totalInactiveStudentsYear:", totalInactiveStudentsYear);
-        console.log("totalInactiveStudentsTerm:", totalInactiveStudentsTerm);
-        console.log("totalPaidViaCashToday:", totalPaidViaCashToday);
-        console.log("totalBankedToday:", totalBankedToday);
-        console.log("recentPayments:", recentPayments);
-
-
-        // Render `dashboard.ejs` directly and pass all the required data
-        res.render('dashboard', {
-            title: 'Dashboard',
-            schoolName,
-            user: req.user,
+        // Fetch all required data
+        const [
+            currentTerm,
+            schoolDetails,
             totalActiveStudents,
             totalInactiveStudentsYear,
             totalInactiveStudentsTerm,
             totalPaidViaCashToday,
             totalBankedToday,
             recentPayments
+        ] = await Promise.all([
+            schoolDataService.getCurrentTerm(),
+            schoolDataService.getSchoolDetails(),
+            schoolDataService.getActiveStudents(currentTerm?.id), // Use optional chaining
+            schoolDataService.getInactiveStudentsYear(new Date().getFullYear()),
+            schoolDataService.getInactiveStudentsTerm(currentTerm?.id),
+            schoolDataService.getPaidViaMethodToday('Cash'),
+            schoolDataService.getPaidViaMethodToday('Bank'),
+            schoolDataService.getRecentPayments(10)
+        ]);
+
+        // Check if current term exists
+        if (!currentTerm) {
+            return res.status(400).json({ 
+                message: 'No current term found for this school.',
+                schoolId,
+                schoolName: schoolDetails?.name 
+            });
+        }
+
+        // Return dashboard data
+        res.json({
+            title: 'Dashboard',
+            schoolName: schoolDetails?.name,
+            user: {
+                userId,
+                username,
+                role,
+                schoolId
+            },
+            currentTerm: {
+                id: currentTerm.id,
+                name: currentTerm.name
+            },
+            data: {
+                totalActiveStudents,
+                totalInactiveStudentsYear,
+                totalInactiveStudentsTerm,
+                totalPaidViaCashToday,
+                totalBankedToday,
+                recentPayments
+            }
         });
 
     } catch (error) {
         console.error('Error loading dashboard:', error);
-        res.render('layout', {
-            title: 'Dashboard',
-            schoolName,
-            user: req.user,
-            content: '<p>Error loading dashboard.</p>'
+        
+        // More detailed error response
+        res.status(500).json({ 
+            message: 'Server error while loading dashboard',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
+
+module.exports = { dashboard };
