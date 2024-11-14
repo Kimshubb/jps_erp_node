@@ -5,7 +5,7 @@ const authenticateToken  = require('../middleware/authMiddleware'); // Middlewar
 console.log("Dashboard function:", dashboard);
 const router = express.Router();
 
-//Dashboard route (protected)
+/**Dashboard route (protected)
 router.get('/dashboard', authenticateToken, async (req, res) => {
     console.log("Dashboard route accessed", req.user);
     try {
@@ -15,11 +15,11 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       console.log("Error:", error.message);
       res.status(500).json({ message: error.message });
     }
-  });
+  });*/
 
 // Dashboard route (protected)
 
-//router.get('/api/dashboard', authenticateToken, dashboard);
+router.get('/dashboard', authenticateToken, dashboard);
 
 
 

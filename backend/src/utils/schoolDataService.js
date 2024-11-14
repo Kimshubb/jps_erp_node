@@ -21,10 +21,10 @@ class SchoolDataService {
      * @returns {Promise<object[]>} List of recent payments
      */
     async getRecentPayments(limit = 10) {
-        return prisma.payment.findMany({
+        return prisma.feePayment.findMany({
             where: { schoolId: this.schoolId },
             take: limit,
-            orderBy: { date: 'desc' }
+            orderBy: { payDate: 'desc' }
         });
     }
 
@@ -35,7 +35,7 @@ class SchoolDataService {
      */
     async getActiveStudents(termId) {
         return prisma.student.count({
-            where: { schoolId: this.schoolId, currentTermId: termId, isActive: true }
+            where: { schoolId: this.schoolId, currentTermId: termId, active: true }
         });
     }
 
@@ -46,7 +46,7 @@ class SchoolDataService {
      */
     async getInactiveStudentsTerm(termId) {
         return prisma.student.count({
-            where: { schoolId: this.schoolId, currentTermId: termId, isActive: false }
+            where: { schoolId: this.schoolId, currentTermId: termId, active: false }
         });
     }
 
@@ -59,8 +59,8 @@ class SchoolDataService {
         return prisma.student.count({
             where: {
                 schoolId: this.schoolId,
-                isActive: false,
-                term: { year }
+                active: false,
+                currentTerm: { year: year }
             }
         });
     }
@@ -72,7 +72,7 @@ class SchoolDataService {
      * @returns {Promise<number>} Total payment amount
      */
     async getPaidViaMethodTerm(termId, method) {
-        const result = await prisma.payment.aggregate({
+        const result = await prisma.feePayment.aggregate({
             where: { schoolId: this.schoolId, termId, method },
             _sum: { amount: true }
         });
@@ -86,7 +86,7 @@ class SchoolDataService {
      * @returns {Promise<number>} Total payment amount
      */
     async getPaidViaMethodYear(year, method) {
-        const result = await prisma.payment.aggregate({
+        const result = await prisma.feePayment.aggregate({
             where: {
                 schoolId: this.schoolId,
                 method,
@@ -104,8 +104,8 @@ class SchoolDataService {
      */
     async getPaidViaMethodToday(method) {
         const today = new Date();
-        const result = await prisma.payment.aggregate({
-            where: { schoolId: this.schoolId, method, date: today },
+        const result = await prisma.feePayment.aggregate({
+            where: { schoolId: this.schoolId, method, payDate: today },
             _sum: { amount: true }
         });
         return result._sum.amount || 0;

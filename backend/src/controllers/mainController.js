@@ -1,26 +1,47 @@
-// src/controllers/mainController.js
 const SchoolDataService = require('../utils/SchoolDataService');
 
 const dashboard = async (req, res) => {
-    console.log("dashboard - req.user:", req.user);
-    
-    // Updated check to match the authentication middleware structure
+    // Log user info for debugging
+    console.log("Dashboard route accessed", req.user);
+
+    // Check for valid user authentication
     if (!req.user || typeof req.user.schoolId !== 'number') {
-        console.log("Invalid or missing schoolId in user object:", req.user);
+        console.log("Invalid or missing user or schoolId in user object:", req.user);
         return res.status(401).json({ message: 'User not properly authenticated' });
     }
 
-    // Destructure all relevant user info
+    // Destructure user data from request
     const { username, userId, role, schoolId } = req.user;
+    console.log("Destructured User data:", { username, userId, role, schoolId });
 
     try {
-        // Initialize SchoolDataService with the schoolId from authenticated user
+        // Initialize SchoolDataService with the authenticated user's schoolId
         const schoolDataService = new SchoolDataService(schoolId);
 
-        // Fetch all required data
+        // Retrieve the school details and current term to make sure dependencies are available
+        const [schoolDetails, currentTerm] = await Promise.all([
+            schoolDataService.getSchoolDetails(),
+            schoolDataService.getCurrentTerm()
+        ]);
+        console.log("School details:", schoolDetails);
+        console.log("Current term:", currentTerm);
+
+        // Check if the school details or current term exist
+        if (!schoolDetails) {
+            console.log("No school details found for the user");
+            return res.status(400).json({ message: 'School details not found. Please contact an administrator.' });
+        }
+
+        if (!currentTerm) {
+            console.log("No current term found");
+            return res.status(400).json({ 
+                message: 'No current term found for this school. Please set a current term.',
+                schoolName: schoolDetails.name
+            });
+        }
+
+        // Fetch the dashboard data based on current term and school details
         const [
-            currentTerm,
-            schoolDetails,
             totalActiveStudents,
             totalInactiveStudentsYear,
             totalInactiveStudentsTerm,
@@ -28,29 +49,26 @@ const dashboard = async (req, res) => {
             totalBankedToday,
             recentPayments
         ] = await Promise.all([
-            schoolDataService.getCurrentTerm(),
-            schoolDataService.getSchoolDetails(),
-            schoolDataService.getActiveStudents(currentTerm?.id), // Use optional chaining
+            schoolDataService.getActiveStudents(currentTerm.id),
             schoolDataService.getInactiveStudentsYear(new Date().getFullYear()),
-            schoolDataService.getInactiveStudentsTerm(currentTerm?.id),
+            schoolDataService.getInactiveStudentsTerm(currentTerm.id),
             schoolDataService.getPaidViaMethodToday('Cash'),
             schoolDataService.getPaidViaMethodToday('Bank'),
             schoolDataService.getRecentPayments(10)
         ]);
+        console.log("Dashboard data:", {
+            totalActiveStudents,
+            totalInactiveStudentsYear,
+            totalInactiveStudentsTerm,
+            totalPaidViaCashToday,
+            totalBankedToday,
+            recentPayments
+        });
 
-        // Check if current term exists
-        if (!currentTerm) {
-            return res.status(400).json({ 
-                message: 'No current term found for this school.',
-                schoolId,
-                schoolName: schoolDetails?.name 
-            });
-        }
-
-        // Return dashboard data
+        // Respond with the dashboard data
         res.json({
             title: 'Dashboard',
-            schoolName: schoolDetails?.name,
+            schoolName: schoolDetails.name,
             user: {
                 userId,
                 username,
@@ -62,21 +80,20 @@ const dashboard = async (req, res) => {
                 name: currentTerm.name
             },
             data: {
-                totalActiveStudents,
-                totalInactiveStudentsYear,
-                totalInactiveStudentsTerm,
-                totalPaidViaCashToday,
-                totalBankedToday,
-                recentPayments
+                totalActiveStudents: totalActiveStudents || 0,
+                totalInactiveStudentsYear: totalInactiveStudentsYear || 0,
+                totalInactiveStudentsTerm: totalInactiveStudentsTerm || 0,
+                totalPaidViaCashToday: totalPaidViaCashToday || 0,
+                totalBankedToday: totalBankedToday || 0,
+                recentPayments: recentPayments || []
             }
         });
 
     } catch (error) {
         console.error('Error loading dashboard:', error);
         
-        // More detailed error response
         res.status(500).json({ 
-            message: 'Server error while loading dashboard',
+            message: 'Server error while loading dashboard data',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
