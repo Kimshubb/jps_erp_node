@@ -1,3 +1,5 @@
+// Desc: Sidebar component for the dashboard
+//src/components/Sidebar.js
 import React from 'react';
 import { Box, List, ListItem, ListItemIcon, ListItemText, Collapse } from '@mui/material';
 import {
@@ -13,7 +15,7 @@ import {
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
-function Sidebar() {
+function Sidebar({schoolName}) {
   const [open, setOpen] = React.useState({ students: false, fees: false, staff: false, schedules: false, settings: false });
 
   const handleClick = (section) => {
@@ -23,7 +25,7 @@ function Sidebar() {
   return (
     <Box sx={{ width: 250, bgcolor: 'primary.main', color: 'white', minHeight: '100vh', paddingTop: 2 }}>
       <Box sx={{ textAlign: 'center', paddingBottom: 2 }}>
-        <h3>School Name</h3>
+        <h3>{schoolName|| 'School name'}</h3>
       </Box>
       <List component="nav">
         <ListItem button component={Link} to="/dashboard">

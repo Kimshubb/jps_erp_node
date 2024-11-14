@@ -19,18 +19,17 @@ const Dashboard = () => {
 
         const response = await axiosInstance.get('/api/dashboard');
         console.log('Dashboard data received:', response.data);
-        setData(response.data);
+        setData(response.data); // Store all data in state
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setError(error.response?.data?.message || 'Failed to load dashboard data');
-        // If unauthorized, redirect to login
         if (error.response?.status === 401) {
           localStorage.removeItem('token');
           window.location.href = '/login';
+        }
+      } finally {
+        setLoading(false);
       }
-  } finally {
-      setLoading(false);
-  }
     };
 
     fetchData();
@@ -38,27 +37,31 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-            <CircularProgress />
-        </Box>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error) {
     return (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-            <Alert severity="error">{error}</Alert>
-        </Box>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Alert severity="error">{error}</Alert>
+      </Box>
     );
   }
 
+  // Destructure school details and user from the fetched data
+  const { schoolName, user } = data;
+
   return (
     <Box display="flex">
-      <Sidebar />
+      {/* Pass user and schoolDetails as props to Sidebar */}
+      <Sidebar schoolName={schoolName} />
       <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}>
-        <Topbar />
+        <Topbar user={user}/>
         <Container>
-            {data && <DashboardCards data={data.data} />}
+          {data && <DashboardCards data={data} />}
         </Container>
       </Box>
     </Box>
