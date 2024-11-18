@@ -10,22 +10,63 @@ class SchoolDataService {
      * @returns {Promise<object>} Current term object
      */
     async getCurrentTerm() {
-        return prisma.term.findFirst({
-            where: { schoolId: this.schoolId, current: true }
-        });
+        try {
+            const currentTerm = await prisma.term.findFirst({
+                where: {
+                    schoolId: this.schoolId,
+                    current: true
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    startDate: true,
+                    endDate: true
+                }
+            });
+
+            if (!currentTerm) {
+                throw new Error('No active term found for this school');
+            }
+
+            return currentTerm;
+        } catch (error) {
+            console.error('Error fetching current term:', error);
+            throw new Error('Failed to fetch current term');
+        }
     }
+
 
     /**
      * Get recent payments for this school
      * @param {number} limit 
+     * @param {number} schoolId
      * @returns {Promise<object[]>} List of recent payments
      */
     async getRecentPayments(limit = 10) {
-        return prisma.feePayment.findMany({
-            where: { schoolId: this.schoolId },
-            take: limit,
-            orderBy: { payDate: 'desc' }
-        });
+        try {
+            return await prisma.feePayment.findMany({
+                where: { schoolId: this.schoolId }, // Query for specific school ID
+                orderBy: { payDate: 'desc' },
+                take: limit,
+                select: {
+                    id: true,
+                    method: true,
+                    amount: true,
+                    payDate: true,
+                    student: {
+                        select: {
+                            fullName: true,
+                            grade: {
+                                select: { name: true },
+                            },
+                        },
+                    },
+                },
+            });
+        } catch (error) {
+            console.error('Error fetching recent payments:', error);
+            throw new Error('Unable to fetch recent payments');
+        }
     }
 
     /**
@@ -130,7 +171,104 @@ class SchoolDataService {
         });
     }
 
+    /**
+     * Fetch all grades for the school with their associated streams
+     * @returns {Promise<{grades: Array, streams: Array}>}
+     */
+    async getGradesAndStreams() {
+        try {
+            const grades = await prisma.grade.findMany({
+                where: { schoolId: this.schoolId },
+                include: { streams: true },
+                orderBy: { name: 'asc' }
+            });
+            
+            return {
+                grades,
+                streams: grades.flatMap(grade => grade.streams)
+            };
+        } catch (error) {
+            console.error('Error fetching grades and streams:', error);
+            throw new Error('Failed to fetch school data');
+        }
+    }
 
+    /**
+     * Get streams for a specific grade
+     * @param {number} gradeId 
+     * @returns {Promise<Array>}
+     */
+    async getStreamsByGrade(gradeId) {
+        try {
+            const streams = await prisma.stream.findMany({
+                where: {
+                    gradeId: parseInt(gradeId),
+                    grade: {
+                        schoolId: this.schoolId
+                    }
+                },
+                select: {
+                    id: true,
+                    name: true
+                },
+                orderBy: {
+                    name: 'asc'
+                }
+            });
+
+            return streams;
+        } catch (error) {
+            console.error(`Error fetching streams for grade ${gradeId}:`, error);
+            throw new Error('Failed to fetch streams');
+        }
+    }
+
+    /**
+     * Validate if a stream belongs to a grade in this school
+     * @param {number} gradeId 
+     * @param {number} streamId 
+     * @returns {Promise<boolean>}
+     */
+    async validateGradeAndStream(gradeId, streamId) {
+        try {
+            const stream = await prisma.stream.findFirst({
+                where: {
+                    id: parseInt(streamId),
+                    gradeId: parseInt(gradeId),
+                    grade: {
+                        schoolId: this.schoolId
+                    }
+                }
+            });
+
+            return !!stream;
+        } catch (error) {
+            console.error('Error validating grade and stream:', error);
+            throw new Error('Failed to validate grade and stream');
+        }
+    }
+     /**
+     * Get all form options needed for student registration
+     * @returns {Promise<Object>}
+     */
+     async getStudentRegistrationOptions() {
+        try {
+            // Get grades and streams
+            const { grades, streams } = await this.getGradesAndStreams();
+
+            // Get current term
+            const currentTerm = await this.getCurrentTerm();
+
+            return {
+                grades,
+                streams,
+                currentTerm
+            };
+        } catch (error) {
+            console.error('Error fetching registration options:', error);
+            throw new Error('Failed to fetch registration options');
+        }
+    }
 }
 
 module.exports = SchoolDataService;

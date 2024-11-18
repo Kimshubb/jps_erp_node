@@ -1,5 +1,5 @@
 const express = require('express');
-const { manageTerms, manageFeeStructure, migrateTerm, configureGrades} = require('../controllers/settingsController');
+const { /*manageTerms, manageFeeStructure, migrateTerm, */configureGrades} = require('../controllers/settingsController');
 const { body } = require('express-validator');
 
 const router = express.Router();
@@ -7,7 +7,7 @@ const router = express.Router();
 //To do: missing manageAdditionalFees route
 
 // GET and POST routes for managing terms
-router.route('/terms')
+/**router.route('/terms')
     .get(manageTerms)
     .post(
         [
@@ -43,9 +43,9 @@ router.route('/migrate_term')
         [body('term_id').isInt().withMessage('A valid term ID is required.')],
         migrateTerm
     );
-
+*/
 // Configure grades route
-router.route('/configure_grades')
+router.route('/configure-grades')
     .get(configureGrades)
     .post(
         [
@@ -55,8 +55,5 @@ router.route('/configure_grades')
         ],
         configureGrades
     );
-
-//To do: missing manageAdditionalFees route
-
 
 module.exports = router;

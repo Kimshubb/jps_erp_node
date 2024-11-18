@@ -41,7 +41,7 @@ function Sidebar({schoolName}) {
         </ListItem>
         <Collapse in={open.students} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            <ListItem button component={Link} to="/students/view" sx={{ pl: 4 }}>
+            <ListItem button component={Link} to="/students" sx={{ pl: 4 }}>
               <ListItemText primary="View Students" />
             </ListItem>
             <ListItem button component={Link} to="/students/add" sx={{ pl: 4 }}>
@@ -78,8 +78,8 @@ function Sidebar({schoolName}) {
         </ListItem>
         <Collapse in={open.settings} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            <ListItem button component={Link} to="/settings/terms" sx={{ pl: 4 }}>
-              <ListItemText primary="Manage Terms" />
+            <ListItem button component={Link} to="/settings/configure-grades" sx={{ pl: 4 }}>
+              <ListItemText primary="Manage Grades" />
             </ListItem>
           </List>
         </Collapse>

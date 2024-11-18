@@ -1,12 +1,17 @@
 // src/controllers/studentController.js
 const prisma = require('../utils/prismaClient');
+const { validationResult } = require('express-validator');
+const { DateTime } = require('luxon');
+const SchoolDataService = require('../utils/schoolDataService');
+
 
 /**
  * Fetches students with pagination and filters for grade, term, and stream.
  * GET /api/students
  */
+
 const getStudents = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
+    const page = Math.max(parseInt(req.query.page) || 1, 1); // Ensure valid page number
     const gradeFilter = req.query.grade || 'all';
     const termFilter = req.query.term || 'all';
     const streamFilter = req.query.stream || 'all';
@@ -16,9 +21,9 @@ const getStudents = async (req, res) => {
     try {
         // Build the base filter for students
         let studentFilter = { schoolId };
-        if (gradeFilter !== 'all') studentFilter.gradeId = parseInt(gradeFilter);
-        if (termFilter !== 'all') studentFilter.currentTermId = parseInt(termFilter);
-        if (streamFilter !== 'all') studentFilter.streamId = parseInt(streamFilter);
+        if (gradeFilter !== 'all' && !isNaN(gradeFilter)) studentFilter.gradeId = parseInt(gradeFilter);
+        if (termFilter !== 'all' && !isNaN(termFilter)) studentFilter.currentTermId = parseInt(termFilter);
+        if (streamFilter !== 'all' && !isNaN(streamFilter)) studentFilter.streamId = parseInt(streamFilter);
 
         // Fetch paginated students based on filters
         const students = await prisma.student.findMany({
@@ -26,9 +31,9 @@ const getStudents = async (req, res) => {
             skip: (page - 1) * perPage,
             take: perPage,
             include: {
-                grade: true,
-                stream: true,
-                currentTerm: true
+                grade: { select: { name: true } },
+                stream: { select: { name: true } },
+                currentTerm: { select: { name: true } }
             }
         });
 
@@ -38,11 +43,9 @@ const getStudents = async (req, res) => {
         });
 
         // Fetch grades, terms, and streams for filter options
-        const grades = await prisma.grade.findMany({ where: { schoolId } });
-        const terms = await prisma.term.findMany({ where: { schoolId } });
-        const streams = await prisma.stream.findMany({
-            where: { gradeId: { in: grades.map(grade => grade.id) } }
-        });
+        const grades = await prisma.grade.findMany({ where: { schoolId }, select: { id: true, name: true } });
+        const terms = await prisma.term.findMany({ where: { schoolId }, select: { id: true, name: true } });
+        const streams = await prisma.stream.findMany({ where: { schoolId }, select: { id: true, name: true } });
 
         // Return response with paginated students and filters
         res.json({
@@ -70,18 +73,29 @@ const getStudents = async (req, res) => {
  * POST /api/students/add - Add a new student
  */
 const addStudent = async (req, res) => {
-    const schoolId = req.user.schoolId; // Assume `req.user` is populated by auth middleware
+    if (!req.user) {
+        console.error('Unauthorized: User information is missing.');
+        return res.status(401).json({ message: 'Unauthorized: User information is missing.' });
+    }
+    const { username, userId, role, schoolId } = req.user;
+    console.log("Destructured User data:", { username, userId, role, schoolId });
+
+    const schoolDataService = new SchoolDataService(schoolId);
+    console.log('Schoolid from user:', schoolId);
 
     try {
+        console.log('Adding student:', req.method, req.body);
         // Handle GET request: Return grades, streams, and terms
         if (req.method === 'GET') {
-            const grades = await prisma.grade.findMany({ where: { schoolId } });
-            const terms = await prisma.term.findMany({ where: { schoolId, current: true } });
-            const streams = await prisma.stream.findMany({
-                where: { gradeId: { in: grades.map(grade => grade.id) } }
-            });
+            console.log('Fetching form options for adding student');
+            const registrationOptions = await schoolDataService.getStudentRegistrationOptions();
+            if (!registrationOptions) {
+                console.error('Failed to fetch registration options.');
+                return res.status(400).json({ message: 'Failed to fetch registration options.' });
+            }
+            console.log('Form options:', { registrationOptions });
 
-            return res.json({ grades, terms, streams });
+            return res.json(registrationOptions);
         }
 
         // Handle POST request: Validate data and create a new student
@@ -91,18 +105,28 @@ const addStudent = async (req, res) => {
         }
 
         const { full_name, dob, gender, guardian_name, contact_number1, contact_number2, grade_id, stream_id } = req.body;
+        const currentTerm = await schoolDataService.getCurrentTerm();
 
-        const currentTerm = await prisma.term.findFirst({
-            where: { current: true, schoolId }
-        });
+        // Validate grade and stream combination
+        const isValidCombination = await schoolDataService.validateGradeAndStream(
+            grade_id, 
+            stream_id
+        );
+
+        if (!isValidCombination) {
+            return res.status(400).json({ 
+                message: 'Invalid grade and stream combination' 
+            });
+        }
+
         if (!currentTerm) {
             return res.status(400).json({ message: 'No current term set for this school.' });
         }
 
-        const school = await prisma.school.findUnique({
-            where: { id: schoolId }
-        });
-        const studentId = generateCustomStudentId(school.name, schoolId);
+        //const school = await prisma.school.findUnique({
+           // where: { id: schoolId }
+        //});
+        //const studentId = `${school.code}-${school.studentsCount + 1}`;
         const currentYear = DateTime.now().year;
 
         // Create the new student
@@ -127,12 +151,18 @@ const addStudent = async (req, res) => {
         res.status(201).json({ message: 'Student successfully registered!', student });
 
     } catch (error) {
-        console.error('Error adding student:', error);
-        res.status(500).json({ message: 'An error occurred while adding the student.' });
+        console.error('Error in addStudent:', error);
+        if (error.message === 'No active term found for this school') {
+            return res.status(400).json({ 
+                message: 'Cannot register student: No active term set for this school' 
+            });
+        }
+        res.status(500).json({ 
+            message: 'An error occurred while processing your request' 
+        });
     }
 };
 
-// src/controllers/studentController.js
 const updateStudent = async (req, res) => {
     const { studentId } = req.params;
 
@@ -196,12 +226,12 @@ const toggleStudentStatus = async (req, res) => {
         const updatedStudent = await prisma.student.update({
             where: { student_id: studentId },
             data: {
-                isActive: !student.isActive,
-                left_date: student.isActive ? DateTime.now().toISODate() : null
+                isActive: !student.active,
+                left_date: student.active ? DateTime.now().toISODate() : null
             }
         });
 
-        const status = updatedStudent.isActive ? 'active' : 'inactive';
+        const status = updatedStudent.active ? 'active' : 'inactive';
         res.json({ message: `Student marked as ${status}!`, student: updatedStudent });
 
     } catch (error) {
@@ -210,5 +240,7 @@ const toggleStudentStatus = async (req, res) => {
     }
 };
 
-
-module.exports = {getStudents, addStudent, updateStudent, toggleStudentStatus};
+module.exports = { 
+    addStudent,  
+    getStudents
+ };

@@ -1,25 +1,23 @@
-// src/pages/Dashboard.js
 import React, { useEffect, useState } from 'react';
-import { Box, Container, CircularProgress, Alert } from '@mui/material';
-import Sidebar from '../components/Sidebar';
-import Topbar from '../components/TopBar';
+import { Box, CircularProgress, Alert } from '@mui/material';
 import DashboardCards from '../components/DashboardCards';
+import RecentPaymentsTable from '../components/RecentPaymentsTable'; // Import the new component
 import axiosInstance from '../utils/axiosInstance';
 
 const Dashboard = () => {
-  const [data, setData] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchDashboardData = async () => {
       try {
         setLoading(true);
         setError(null);
 
         const response = await axiosInstance.get('/api/dashboard');
         console.log('Dashboard data received:', response.data);
-        setData(response.data); // Store all data in state
+        setDashboardData(response.data.data); // Store only relevant dashboard data
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setError(error.response?.data?.message || 'Failed to load dashboard data');
@@ -32,7 +30,7 @@ const Dashboard = () => {
       }
     };
 
-    fetchData();
+    fetchDashboardData();
   }, []);
 
   if (loading) {
@@ -51,19 +49,15 @@ const Dashboard = () => {
     );
   }
 
-  // Destructure school details and user from the fetched data
-  const { schoolName, user } = data;
-
   return (
-    <Box display="flex">
-      {/* Pass user and schoolDetails as props to Sidebar */}
-      <Sidebar schoolName={schoolName} />
-      <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}>
-        <Topbar user={user}/>
-        <Container>
-          {data && <DashboardCards data={data} />}
-        </Container>
-      </Box>
+    <Box>
+      {/* Render dashboard cards */}
+      {dashboardData && <DashboardCards data={dashboardData} />}
+
+      {/* Render recent payments table */}
+      {dashboardData?.recentPayments && (
+        <RecentPaymentsTable payments={dashboardData.recentPayments} />
+      )}
     </Box>
   );
 };

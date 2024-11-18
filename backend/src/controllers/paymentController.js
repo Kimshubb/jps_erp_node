@@ -3,6 +3,8 @@ const { calculateBalance } = require('../utils/calculateBalance');
 const { validationResult } = require('express-validator');
 const { DateTime } = require('luxon'); // For date handling
 const FeesUtility = require('./FeesUtility');
+const QRCode = require('qrcode');
+const SchoolDataService = require('../utils/schoolDataService');
 
 // POST /api/payments/new_payment
 const newPayment = async (req, res) => {
@@ -274,29 +276,17 @@ const printReceipt = async (req, res) => {
  * Fetches all recent payments for the current school.
  * GET /api/payments/recent_payments
  */
-const recentPayments = async (req, res) => {
-    const schoolId = req.user.schoolId; // Assuming req.user is set by an authentication middleware
+const viewAllPayments = async (req, res) => {
+    const schoolId = req.user.schoolId;
 
     try {
-        // Fetch all recent payments for the school
-        const recentPayments = await prisma.payment.findMany({
-            where: { schoolId },
-            orderBy: { date: 'desc' },
-            include: {
-                student: { select: { full_name: true } },
-                term: { select: { name: true } }
-            }
-        });
+        const schoolDataService = new SchoolDataService(schoolId);
+        const allPayments = await schoolDataService.getRecentPayments(); // Call without limit to fetch all
 
-        // Log for debugging (optional)
-        console.log("All Recent Payments:", recentPayments);
-
-        // Return recent payments as JSON
-        res.json({ recentPayments });
-
+        res.json({ payments: allPayments });
     } catch (error) {
-        console.error("Error fetching all recent payments:", error);
-        res.status(500).json({ message: 'An error occurred while fetching recent payments.' });
+        console.error('Error fetching all payments:', error);
+        res.status(500).json({ message: 'An error occurred while fetching all payments.' });
     }
 };
 
@@ -508,4 +498,4 @@ const addAdditionalFee = async (req, res) => {
     }
 };
 
-module.exports = { newPayment, studentPayments, printReceipt, recentPayments, feeReports, searchStudentPayments, addAdditionalFee };
+module.exports = { newPayment, studentPayments, printReceipt, viewAllPayments, feeReports, searchStudentPayments, addAdditionalFee };

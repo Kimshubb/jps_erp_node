@@ -1,10 +1,13 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/login';
 import Dashboard from './pages/Dashboard';
 import LandingPage from './pages/LandingPage';
+import Students from './pages/Students'; 
+import AddStudent from './pages/AddStudent';
+import ConfigureGrades from './pages/ConfigureGrades';
+import MainLayout from './components/MainLayout'; // Import MainLayout
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
@@ -47,6 +50,7 @@ const App = () => {
     return (
         <Router>
             <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 <Route 
                     path="/login" 
@@ -56,11 +60,45 @@ const App = () => {
                         <Login setAuthToken={handleAuth} />
                     } 
                 />
+
+                {/* Protected Routes */}
                 <Route
                     path="/dashboard"
                     element={
                         <ProtectedRoute>
-                            <Dashboard />
+                            <MainLayout>
+                                <Dashboard />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/students"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <Students />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/students/add"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <AddStudent />
+                            </MainLayout>
+                        </ProtectedRoute>
+                  }
+                />
+                <Route
+                    path="/settings/configure-grades"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <ConfigureGrades />
+                            </MainLayout>
                         </ProtectedRoute>
                     }
                 />

@@ -1,74 +1,69 @@
-// src/routes/studentRoutes.js
 const express = require('express');
-const { isAuthenticated } = require('../middleware/authMiddleware');
-const { getStudents, addStudent, updateStudent, toggleStudentStatus } = require('../controllers/StudentController');
-const { body } = require('express-validator');
+const { addStudent } = require('../controllers/StudentController');
+console.log("Add student function:", addStudent);
+const { body, param } = require('express-validator');
+//const { authenticateToken } = require('../middleware/authMiddleware');
+//console.log("IsAuthenticated function:", authenticateToken);
 
 const router = express.Router();
 
-// Route for fetching students with filters and pagination
-router.get('/students', async (req, res) => {
-    try {
-      const data = await getStudents(req, res);
-      res.json(data);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-// Route for adding a student
-router.route('/students/add')
-    .get(isAuthenticated, async (req, res, next) => {
-        try {
-            await addStudent(req, res, next);
-        } catch (error) {
-            next(error);
-        }
-    })
+// Utility to handle async errors
+const asyncHandler = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+
+
+//router.get('/view-students', isAuthenticated, getStudents);
+//Route for adding a student
+router.route('/add')
+    .get( asyncHandler(addStudent))
     .post(
-        isAuthenticated,
         [
             body('full_name').notEmpty().withMessage('Full name is required'),
             body('dob').notEmpty().withMessage('Date of birth is required'),
-            body('gender').isIn(['Male', 'Female', 'Other']).withMessage('Gender is invalid'),
+            body('gender').isIn(['Male', 'Female', 'Other']).withMessage('Invalid gender'),
             body('guardian_name').notEmpty().withMessage('Guardian name is required'),
             body('contact_number1').notEmpty().withMessage('Primary contact number is required'),
             body('contact_number2').optional().isMobilePhone().withMessage('Secondary contact number is invalid'),
             body('grade_id').notEmpty().withMessage('Grade is required'),
             body('stream_id').notEmpty().withMessage('Stream is required')
         ],
-        async (req, res, next) => {
-            try {
-                await addStudent(req, res, next);
-            } catch (error) {
-                next(error);
-            }
-        }
+        asyncHandler(addStudent)
     );
 
-// Route for updating a student
+/* Route for updating a student
 router.route('/students/:studentId/update')
-    .get(isAuthenticated, async (req, res, next) => {
-        try {
-            await updateStudent(req, res, next);
-        } catch (error) {
-            next(error);
-        }
-    })
-    .post(isAuthenticated, async (req, res, next) => {
-        try {
-            await updateStudent(req, res, next);
-        } catch (error) {
-            next(error);
-        }
-    });
+    .get(
+        isAuthenticated,
+        [
+            param('studentId').isInt().withMessage('Invalid student ID')
+        ],
+        asyncHandler(updateStudent)
+    )
+    .post(
+        isAuthenticated,
+        [
+            body('full_name').optional().notEmpty().withMessage('Full name cannot be empty'),
+            body('dob').optional().notEmpty().withMessage('Date of birth cannot be empty'),
+            body('gender').optional().isIn(['Male', 'Female', 'Other']).withMessage('Invalid gender'),
+            body('guardian_name').optional().notEmpty().withMessage('Guardian name cannot be empty'),
+            body('contact_number1').optional().notEmpty().withMessage('Primary contact number cannot be empty'),
+            body('contact_number2').optional().isMobilePhone().withMessage('Secondary contact number is invalid'),
+            body('grade_id').optional().notEmpty().withMessage('Grade cannot be empty'),
+            body('stream_id').optional().notEmpty().withMessage('Stream cannot be empty'),
+            param('studentId').isInt().withMessage('Invalid student ID')
+        ],
+        asyncHandler(updateStudent)
+    );
 
 // Route for toggling a student's active status
-router.post('/students/:studentId/inactive', isAuthenticated, async (req, res, next) => {
-    try {
-        await toggleStudentStatus(req, res, next);
-    } catch (error) {
-        next(error);
-    }
-});
+router.patch('/students/:studentId/status',
+    isAuthenticated,
+    [
+        param('studentId').isInt().withMessage('Invalid student ID')
+    ],
+    asyncHandler(toggleStudentStatus)
+);*/
 
 module.exports = router;

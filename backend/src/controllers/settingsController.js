@@ -311,65 +311,84 @@ const migrateTerm = async (req, res) => {
 // GET /api/settings/configure-grades
 // POST /api/settings/configure-grades
 const configureGrades = async (req, res) => {
-    const schoolId = req.user.schoolId;
+    const schoolId = req.user.schoolId; // Ensure this comes from the authenticated user's token/session
+    console.log('\n=== Configure Grades Handler Start ===');
+    console.log('User Info:', {
+        userId: req.user.userId,
+        schoolId: req.user.schoolId,
+        role: req.user.role
+    });
 
     if (req.method === 'GET') {
+        console.log('Processing GET request...');
         try {
+            console.log('Attempting to fetch grades for schoolId:', schoolId);
             const grades = await prisma.grade.findMany({
                 where: { schoolId },
                 include: { streams: true }
             });
-            res.json({ grades });
+            console.log('Fetched grades:', grades);
+            return res.json({ grades });
         } catch (error) {
             console.error('Error fetching grades:', error);
-            res.status(500).json({ error: 'Unable to retrieve grades.' });
+            return res.status(500).json({ error: 'Unable to retrieve grades.' });
         }
     }
 
-    else if (req.method === 'POST') {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+    if (req.method === 'POST') {
+        console.log('Processing POST request...');
+        const { grades } = req.body;
+        console.log('Received grades:', req.body);
+
+        if (!grades || !Array.isArray(grades)) {
+            console.log('Invalid input. `grades` must be an array.');
+            return res.status(400).json({ error: 'Invalid input. `grades` must be an array.' });
         }
 
-        const { grades } = req.body;
-
         try {
+            console.log('Configuring grades for schoolId:', schoolId);  
             for (const gradeData of grades) {
                 let grade = await prisma.grade.findFirst({
                     where: { name: gradeData.name, schoolId }
                 });
+                console.log('Existing Grade Found:', grade);
 
                 if (!grade) {
+                    console.log('Creating new grade:', gradeData.name);
                     grade = await prisma.grade.create({
                         data: { name: gradeData.name, schoolId }
                     });
+                    console.log('New Grade Created:', grade);
                 }
 
                 const existingStreams = await prisma.stream.findMany({
                     where: { gradeId: grade.id },
                     select: { name: true }
                 });
-                const existingStreamNames = existingStreams.map(s => s.name);
+                console.log('Existing Streams:', existingStreams);  
+
+                const existingStreamNames = existingStreams.map((stream) => stream.name);
 
                 for (const streamName of gradeData.streams) {
                     if (!existingStreamNames.includes(streamName)) {
                         await prisma.stream.create({
                             data: { name: streamName, gradeId: grade.id }
                         });
+                        console.log('New Stream Created:', streamName);
                     }
                 }
             }
 
-            res.json({ message: 'Grades and streams configured successfully!' });
+            return res.json({ message: 'Grades and streams successfully configured!' });
         } catch (error) {
             console.error('Error configuring grades:', error);
-            res.status(500).json({ error: 'Unable to configure grades and streams.' });
+            return res.status(500).json({ error: 'Unable to configure grades and streams.', details: error.message, stack: error.stack });
         }
     }
 };
 
 
 
-module.exports = { manageTerms, manageFeeStructure, manageAdditionalFees, migrateTerm, configureGrades }; // Export functions for use in routes
+
+module.exports = { /*manageTerms, manageFeeStructure, manageAdditionalFees, migrateTerm,*/ configureGrades }; // Export functions for use in routes
 // In the code snippet above, we have defined route handlers for managing terms, fee structures, additional fees, migrating terms, and configuring grades. These handlers interact with the Prisma ORM to perform CRUD operations on the database and return appropriate responses to the client.

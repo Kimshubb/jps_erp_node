@@ -13,6 +13,10 @@ const dashboard = async (req, res) => {
     // Destructure user data from request
     const { username, userId, role, schoolId } = req.user;
     console.log("Destructured User data:", { username, userId, role, schoolId });
+    console.log('Request method:', req.method);
+    console.log('User data from token:', req.user);
+    console.log('Body data:', req.body);
+    console.log('bearer token:', req.headers.authorization);
 
     try {
         // Initialize SchoolDataService with the authenticated user's schoolId
