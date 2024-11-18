@@ -20,12 +20,12 @@ router.route('/add')
     .get( asyncHandler(addStudent))
     .post(
         [
-            body('full_name').notEmpty().withMessage('Full name is required'),
+            body('fullName').notEmpty().withMessage('Full name is required'),
             body('dob').notEmpty().withMessage('Date of birth is required'),
             body('gender').isIn(['Male', 'Female', 'Other']).withMessage('Invalid gender'),
-            body('guardian_name').notEmpty().withMessage('Guardian name is required'),
-            body('contact_number1').notEmpty().withMessage('Primary contact number is required'),
-            body('contact_number2').optional().isMobilePhone().withMessage('Secondary contact number is invalid'),
+            body('guardianName').notEmpty().withMessage('Guardian name is required'),
+            body('contactNumber1').notEmpty().withMessage('Primary contact number is required'),
+            body('contactNumber2').optional().isMobilePhone().withMessage('Secondary contact number is invalid'),
             body('grade_id').notEmpty().withMessage('Grade is required'),
             body('stream_id').notEmpty().withMessage('Stream is required')
         ],

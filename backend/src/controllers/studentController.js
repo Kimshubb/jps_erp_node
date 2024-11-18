@@ -77,89 +77,134 @@ const addStudent = async (req, res) => {
         console.error('Unauthorized: User information is missing.');
         return res.status(401).json({ message: 'Unauthorized: User information is missing.' });
     }
-    const { username, userId, role, schoolId } = req.user;
-    console.log("Destructured User data:", { username, userId, role, schoolId });
 
-    const schoolDataService = new SchoolDataService(schoolId);
-    console.log('Schoolid from user:', schoolId);
+    const { schoolId } = req.user;
 
     try {
-        console.log('Adding student:', req.method, req.body);
-        // Handle GET request: Return grades, streams, and terms
+        
         if (req.method === 'GET') {
-            console.log('Fetching form options for adding student');
-            const registrationOptions = await schoolDataService.getStudentRegistrationOptions();
-            if (!registrationOptions) {
-                console.error('Failed to fetch registration options.');
-                return res.status(400).json({ message: 'Failed to fetch registration options.' });
+            console.log('GET /api/students/add - Fetching grades, streams, and current term');
+            console.log('User schoolId:', schoolId);
+            // Fetch grades and streams
+            const grades = await prisma.grade.findMany({
+                where: { schoolId },
+                include: { streams: true },
+                orderBy: { name: 'asc' }
+            });
+            console.log('Fetched Grades:', grades);
+
+            const streams = grades.flatMap(grade => grade.streams);
+            console.log('Fetched Streams:', streams);
+            console.log('Fetched grades with detailed streams:', JSON.stringify(grades, null, 2));
+
+            // Fetch current term
+            const currentTerm = await prisma.term.findFirst({
+                where: {
+                    schoolId,
+                    current: true
+                }
+            });
+            console.log('Fetched Current Term:', currentTerm);
+
+            if (!currentTerm) {
+                console.log('No active term set for this school.');
+                return res.status(400).json({ message: 'No active term set for this school.' });
             }
-            console.log('Form options:', { registrationOptions });
+            console.log('Returning form options:', { grades, streams, currentTerm });
 
-            return res.json(registrationOptions);
-        }
-
-        // Handle POST request: Validate data and create a new student
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        const { full_name, dob, gender, guardian_name, contact_number1, contact_number2, grade_id, stream_id } = req.body;
-        const currentTerm = await schoolDataService.getCurrentTerm();
-
-        // Validate grade and stream combination
-        const isValidCombination = await schoolDataService.validateGradeAndStream(
-            grade_id, 
-            stream_id
-        );
-
-        if (!isValidCombination) {
-            return res.status(400).json({ 
-                message: 'Invalid grade and stream combination' 
+            return res.json({
+                grades,
+                streams,
+                currentTerm
             });
         }
 
-        if (!currentTerm) {
-            return res.status(400).json({ message: 'No current term set for this school.' });
+        if (req.method === 'POST') {
+            console.log('POST /api/students/add - Adding a new student');
+            console.log('Received data:', req.body);
+            // Validate the input data
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                console.log('Validation errors:', errors.array());
+                return res.status(400).json({ errors: errors.array() });
+            }
+
+            const { 
+                fullName, dob, gender, guardianName, 
+                contactNumber1, contactNumber2, grade_id, stream_id 
+            } = req.body;
+
+            // Validate grade and stream combination
+            console.log('Validating grade and stream:', { grade_id, stream_id });
+            const isValidCombination = await prisma.stream.findFirst({
+                where: {
+                    id: parseInt(stream_id),
+                    gradeId: parseInt(grade_id),
+                    grade: { schoolId }
+                }
+            });
+            console.log('Combination validation result:', isValidCombination);
+
+            if (!isValidCombination) {
+                console.log('Invalid grade and stream combination.');
+                return res.status(400).json({ message: 'Invalid grade and stream combination.' });
+            }
+
+            // Fetch current term
+            const currentTerm = await prisma.term.findFirst({
+                where: {
+                    schoolId,
+                    current: true
+                }
+            });
+
+
+            if (!currentTerm) {
+                return res.status(400).json({ message: 'No active term set for this school.' });
+            }
+
+            // Generate a unique student ID (custom logic can be added here)
+            const school = await prisma.school.findUnique({
+                where: { id: schoolId }
+            });
+
+            const studentsCount = await prisma.student.count({
+                where: { schoolId }
+            });
+
+            const studentId = `SCH-${schoolId}-${studentsCount + 1}`;
+            console.log('Generated student ID:', studentId);
+
+            // Create the new student
+            const student = await prisma.student.create({
+                data: {
+                    id: studentId,
+                    fullName,
+                    dob: new Date(dob),
+                    gender,
+                    guardianName,
+                    contactNumber1,
+                    contactNumber2,
+                    gradeId: parseInt(grade_id),
+                    streamId: parseInt(stream_id),
+                    schoolId,
+                    year: DateTime.now().year,
+                    currentTermId: currentTerm.id,
+                    active: true
+                }
+            });
+            console.log('Student created:', student);
+
+            return res.status(201).json({ 
+                message: 'Student successfully registered!', 
+                student 
+            });
         }
 
-        //const school = await prisma.school.findUnique({
-           // where: { id: schoolId }
-        //});
-        //const studentId = `${school.code}-${school.studentsCount + 1}`;
-        const currentYear = DateTime.now().year;
-
-        // Create the new student
-        const student = await prisma.student.create({
-            data: {
-                student_id: studentId,
-                full_name,
-                dob: new Date(dob),
-                gender,
-                guardian_name,
-                contact_number1,
-                contact_number2,
-                gradeId: parseInt(grade_id),
-                streamId: parseInt(stream_id),
-                schoolId,
-                year: currentYear,
-                currentTermId: currentTerm.id,
-                isActive: true
-            }
-        });
-
-        res.status(201).json({ message: 'Student successfully registered!', student });
-
+        res.status(405).json({ message: 'Method Not Allowed' });
     } catch (error) {
         console.error('Error in addStudent:', error);
-        if (error.message === 'No active term found for this school') {
-            return res.status(400).json({ 
-                message: 'Cannot register student: No active term set for this school' 
-            });
-        }
-        res.status(500).json({ 
-            message: 'An error occurred while processing your request' 
-        });
+        res.status(500).json({ message: 'An error occurred while processing your request.' });
     }
 };
 

@@ -42,7 +42,7 @@ app.use('/resources', express.static(path.join(__dirname, 'resources')));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api', isAuthenticated, mainRoutes); // Protected main routes
-app.use('/students', isAuthenticated, studentRoutes); // Protected student routes
+app.use('/api/students', studentRoutes); // Protected student routes
 app.use('/settings', isAuthenticated, settingsRoutes); // Protected settings routes
 //app.use('/api/payments', isAuthenticated, paymentRoutes); // Protected payment routes
 app.use('/api/images', imageRoutes);
