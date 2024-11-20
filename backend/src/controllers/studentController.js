@@ -2,7 +2,7 @@
 const prisma = require('../utils/prismaClient');
 const { validationResult } = require('express-validator');
 const { DateTime } = require('luxon');
-const SchoolDataService = require('../utils/schoolDataService');
+//const SchoolDataService = require('../utils/schoolDataService');
 
 
 /**
@@ -11,12 +11,15 @@ const SchoolDataService = require('../utils/schoolDataService');
  */
 
 const getStudents = async (req, res) => {
+    console.log('Get Students Request:', req.query);
+    console.log('received request for /api/students/view-students');
     const page = Math.max(parseInt(req.query.page) || 1, 1); // Ensure valid page number
     const gradeFilter = req.query.grade || 'all';
     const termFilter = req.query.term || 'all';
     const streamFilter = req.query.stream || 'all';
     const perPage = 15;
     const schoolId = req.user.schoolId; // Assume req.user is populated by authentication middleware
+    console.log('Get Students User schoolId:', schoolId);
 
     try {
         // Build the base filter for students
@@ -36,16 +39,27 @@ const getStudents = async (req, res) => {
                 currentTerm: { select: { name: true } }
             }
         });
+        console.log('Fetched students:', students);
 
         // Fetch total count for pagination
         const totalStudents = await prisma.student.count({
             where: studentFilter
         });
+        console.log('Total students:', totalStudents);
 
         // Fetch grades, terms, and streams for filter options
         const grades = await prisma.grade.findMany({ where: { schoolId }, select: { id: true, name: true } });
         const terms = await prisma.term.findMany({ where: { schoolId }, select: { id: true, name: true } });
-        const streams = await prisma.stream.findMany({ where: { schoolId }, select: { id: true, name: true } });
+        const streams = await prisma.stream.findMany({
+            where: {
+                grade: { schoolId: schoolId, 
+                },
+            },
+            select: { id: true, name: true }
+        });
+        console.log('Fetched grades:', grades);
+        console.log('Fetched terms:', terms);
+        console.log('Fetched streams:', streams);
 
         // Return response with paginated students and filters
         res.json({

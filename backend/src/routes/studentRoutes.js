@@ -1,5 +1,5 @@
 const express = require('express');
-const { addStudent } = require('../controllers/StudentController');
+const { addStudent, getStudents } = require('../controllers/StudentController');
 console.log("Add student function:", addStudent);
 const { body, param } = require('express-validator');
 //const { authenticateToken } = require('../middleware/authMiddleware');
@@ -14,7 +14,7 @@ const asyncHandler = (fn) => (req, res, next) => {
 
 
 
-//router.get('/view-students', isAuthenticated, getStudents);
+router.get('/view-students', getStudents);
 //Route for adding a student
 router.route('/add')
     .get( asyncHandler(addStudent))
@@ -31,6 +31,7 @@ router.route('/add')
         ],
         asyncHandler(addStudent)
     );
+
 
 /* Route for updating a student
 router.route('/students/:studentId/update')
