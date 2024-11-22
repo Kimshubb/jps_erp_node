@@ -1,5 +1,6 @@
 //src/controllers/settingsController.js
 const prisma = require('../utils/prismaClient');
+const { validationResult } = require('express-validator');
 
 // GET and POST route handler
 const manageTerms = async (req, res) => {
@@ -29,7 +30,7 @@ const manageTerms = async (req, res) => {
 
             // Check if the term already exists with the same name and year
             const existingTerm = await prisma.term.findFirst({
-                where: { name, year, schoolId }
+                where: { name, year: parseInt(year), schoolId }
             });
 
             if (term_id) {
@@ -43,7 +44,7 @@ const manageTerms = async (req, res) => {
             } else {
                 // Create a new term if term_id is not provided
                 term = await prisma.term.create({
-                    data: { name, year, schoolId }
+                    data: { name, year:parseInt(year), schoolId, startDate: new Date(startDate), endDate: new Date(endDate) }
                 });
             }
 
@@ -62,7 +63,7 @@ const manageTerms = async (req, res) => {
                     name,
                     startDate: new Date(startDate),
                     endDate: new Date(endDate),
-                    year,
+                    year: parseInt(year),
                     current: current || false
                 }
             });
@@ -390,5 +391,5 @@ const configureGrades = async (req, res) => {
 
 
 
-module.exports = { /*manageTerms, manageFeeStructure, manageAdditionalFees, migrateTerm,*/ configureGrades }; // Export functions for use in routes
+module.exports = {manageTerms, configureGrades }; // Export functions for use in routes
 // In the code snippet above, we have defined route handlers for managing terms, fee structures, additional fees, migrating terms, and configuring grades. These handlers interact with the Prisma ORM to perform CRUD operations on the database and return appropriate responses to the client.

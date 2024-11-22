@@ -8,6 +8,7 @@ import Students from './pages/Students';
 import AddStudent from './pages/AddStudent';
 import ConfigureGrades from './pages/ConfigureGrades';
 import MainLayout from './components/MainLayout'; // Import MainLayout
+import Terms from './pages/Terms';
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
@@ -98,6 +99,16 @@ const App = () => {
                         <ProtectedRoute>
                             <MainLayout>
                                 <ConfigureGrades />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/settings/terms"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <Terms />
                             </MainLayout>
                         </ProtectedRoute>
                     }

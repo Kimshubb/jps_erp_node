@@ -1,5 +1,5 @@
 const express = require('express');
-const { /*manageTerms, manageFeeStructure, migrateTerm, */configureGrades} = require('../controllers/settingsController');
+const { manageTerms, /*manageFeeStructure, migrateTerm, */configureGrades} = require('../controllers/settingsController');
 const { body } = require('express-validator');
 
 const router = express.Router();
@@ -7,7 +7,7 @@ const router = express.Router();
 //To do: missing manageAdditionalFees route
 
 // GET and POST routes for managing terms
-/**router.route('/terms')
+/*router.route('/terms')
     .get(manageTerms)
     .post(
         [
@@ -18,9 +18,12 @@ const router = express.Router();
             body('current').isBoolean().optional()
         ],
         manageTerms
-    );
+    );*/
 
 
+router.route('/terms').get(manageTerms).post(manageTerms);
+
+/** 
 router.route('/fee_structure')
     .get(manageFeeStructure)
     .post(

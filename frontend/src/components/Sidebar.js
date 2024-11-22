@@ -83,6 +83,13 @@ function Sidebar({schoolName}) {
             </ListItem>
           </List>
         </Collapse>
+        <Collapse in={open.settings} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem button component={Link} to="/settings/terms" sx={{ pl: 4 }}>
+              <ListItemText primary="Manage Terms" />
+            </ListItem>
+          </List>
+        </Collapse>
 
         {/* Logout */}
         <ListItem button component={Link} to="/logout">
