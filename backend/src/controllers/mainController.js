@@ -1,4 +1,6 @@
-const SchoolDataService = require('../utils/SchoolDataService');
+const SchoolDataService = require('../utils/schoolDataService');
+const prisma = require('../utils/prismaClient');
+
 
 const dashboard = async (req, res) => {
     // Log user info for debugging
@@ -103,4 +105,50 @@ const dashboard = async (req, res) => {
     }
 };
 
-module.exports = { dashboard };
+const getGradesAndTerms = async (req, res) => {
+    try {
+        const schoolId = req.user.schoolId;
+        console.log('Fetching grades and terms for schoolId:', schoolId);
+
+        const terms = await prisma.term.findMany({ 
+            where: { schoolId },
+            select: { 
+                id: true, 
+                name: true 
+            },
+            orderBy: { 
+                startDate: 'desc' 
+            }
+        });
+
+        const grades = await prisma.grade.findMany({ 
+            where: { schoolId },
+            select: { 
+                id: true, 
+                name: true 
+            },
+            orderBy: { 
+                name: 'asc' 
+            }
+        });
+
+        console.log('Found terms:', terms.length);
+        console.log('Found grades:', grades.length);
+
+        res.json({ 
+            success: true, 
+            terms, 
+            grades 
+        });
+    } catch (error) {
+        console.error('Error fetching grades and terms:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Unable to retrieve grades and terms.',
+            details: error.message 
+        });
+    }
+};
+
+
+module.exports = { dashboard, getGradesAndTerms };

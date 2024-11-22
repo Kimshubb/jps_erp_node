@@ -9,6 +9,7 @@ import AddStudent from './pages/AddStudent';
 import ConfigureGrades from './pages/ConfigureGrades';
 import MainLayout from './components/MainLayout'; // Import MainLayout
 import Terms from './pages/Terms';
+import ManageFeeStructures from './pages/FeeStructure';
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
@@ -113,6 +114,17 @@ const App = () => {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/settings/fee-structures"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <ManageFeeStructures />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Router>

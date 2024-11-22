@@ -90,6 +90,13 @@ function Sidebar({schoolName}) {
             </ListItem>
           </List>
         </Collapse>
+        <Collapse in={open.settings} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem button component={Link} to="/settings/fee-structures" sx={{ pl: 4 }}>
+              <ListItemText primary="Manage Fee Structures" />
+            </ListItem>
+          </List>
+        </Collapse>
 
         {/* Logout */}
         <ListItem button component={Link} to="/logout">

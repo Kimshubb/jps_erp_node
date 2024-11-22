@@ -1,5 +1,5 @@
 const express = require('express');
-const { manageTerms, /*manageFeeStructure, migrateTerm, */configureGrades} = require('../controllers/settingsController');
+const { manageTerms, manageFeeStructure, /*migrateTerm, */configureGrades} = require('../controllers/settingsController');
 const { body } = require('express-validator');
 
 const router = express.Router();
@@ -22,6 +22,25 @@ const router = express.Router();
 
 
 router.route('/terms').get(manageTerms).post(manageTerms);
+
+/*GET and POST routes for managing fee structure
+router.route('/fee-structure')
+    .get(manageFeeStructure)
+    .post(
+        [
+            body('term_id').isInt().withMessage('Term is required.'),
+            body('grade').isInt().withMessage('Grade is required.'),
+            body('tuition_fee').isFloat({ min: 0 }).withMessage('Tuition fee must be a positive number.'),
+            body('diary_fee').isFloat({ min: 0 }).withMessage('Diary fee must be a positive number.'),
+            body('activity_fee').isFloat({ min: 0 }).withMessage('Activity fee must be a positive number.'),
+            body('others').isFloat({ min: 0 }).withMessage('Other fees must be a positive number.')
+
+        ],
+        manageFeeStructure
+    );*/
+
+router.route('/fee-structure').get(manageFeeStructure).post(manageFeeStructure);
+
 
 /** 
 router.route('/fee_structure')

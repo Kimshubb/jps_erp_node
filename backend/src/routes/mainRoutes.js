@@ -1,6 +1,6 @@
 // src/routes/mainRoutes.js
 const express = require('express');
-const { dashboard } = require('../controllers/mainController');
+const { dashboard, getGradesAndTerms } = require('../controllers/mainController');
 const authenticateToken  = require('../middleware/authMiddleware'); // Middleware for checking if user is authenticated
 console.log("Dashboard function:", dashboard);
 const router = express.Router();
@@ -20,6 +20,8 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
 // Dashboard route (protected)
 
 router.get('/dashboard', authenticateToken, dashboard);
+
+router.get('/grades-and-terms', authenticateToken, getGradesAndTerms);
 
 
 

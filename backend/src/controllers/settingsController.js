@@ -88,42 +88,33 @@ const manageTerms = async (req, res) => {
  */
 const manageFeeStructure = async (req, res) => {
     const schoolId = req.user.schoolId;
+    console.log('Manage Fee Structure School ID:', schoolId);
 
-    // Handle GET request to fetch fee structures, terms, and grades
     if (req.method === 'GET') {
         try {
-            const terms = await prisma.term.findMany({ where: { schoolId } });
-            const grades = await prisma.grade.findMany({ where: { schoolId } });
-
             const termFilter = req.query.term || 'all';
             const gradeFilter = req.query.grade || 'all';
 
-            let feeStructuresQuery = { schoolId };
+            const feeStructuresQuery = { schoolId };
 
-            if (termFilter !== 'all') {
-                feeStructuresQuery.termId = parseInt(termFilter);
-            }
-            if (gradeFilter !== 'all') {
-                feeStructuresQuery.gradeId = parseInt(gradeFilter);
-            }
+            if (termFilter !== 'all') feeStructuresQuery.termId = parseInt(termFilter);
+            if (gradeFilter !== 'all') feeStructuresQuery.gradeId = parseInt(gradeFilter);
 
             const feeStructures = await prisma.feeStructure.findMany({
                 where: feeStructuresQuery,
-                include: { grade: true, term: true }
+                include: { grade: true, term: true },
             });
 
-            res.json({ feeStructures, terms, grades });
+            res.json({ success: true, feeStructures });
         } catch (error) {
             console.error('Error fetching fee structure:', error);
-            res.status(500).json({ error: 'Unable to retrieve fee structure data.' });
+            res.status(500).json({ success: false, error: 'Unable to retrieve fee structure data.' });
         }
-    }
-
-    // Handle POST request to add or update a fee structure
-    else if (req.method === 'POST') {
+    } else if (req.method === 'POST') {
+        console.log('Processing POST request...');
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            return res.status(400).json({ success: false, errors: errors.array() });
         }
 
         const { fee_structure_id, grade, term_id, tuition_fee, ass_books, diary_fee, activity_fee, others } = req.body;
@@ -132,15 +123,13 @@ const manageFeeStructure = async (req, res) => {
             const term = await prisma.term.findUnique({ where: { id: parseInt(term_id) } });
             const gradeExists = await prisma.grade.findUnique({ where: { id: parseInt(grade) } });
 
-            if (!term || !gradeExists) {
-                return res.status(400).json({ error: 'Invalid term or grade.' });
-            }
+            if (!term) return res.status(400).json({ success: false, error: 'Invalid term.' });
+            if (!gradeExists) return res.status(400).json({ success: false, error: 'Invalid grade.' });
 
             if (fee_structure_id) {
-                // Update existing fee structure
                 let feeStructure = await prisma.feeStructure.findUnique({ where: { id: parseInt(fee_structure_id) } });
                 if (!feeStructure) {
-                    return res.status(404).json({ error: 'Fee structure not found.' });
+                    return res.status(404).json({ success: false, error: 'Fee structure not found.' });
                 }
 
                 feeStructure = await prisma.feeStructure.update({
@@ -152,22 +141,20 @@ const manageFeeStructure = async (req, res) => {
                         assBooks: parseFloat(ass_books),
                         diaryFee: parseFloat(diary_fee),
                         activityFee: parseFloat(activity_fee),
-                        others: parseFloat(others)
-                    }
+                        others: parseFloat(others || 0),
+                    },
                 });
 
-                res.json({ message: 'Fee structure updated successfully!', feeStructure });
+                return res.json({ success: true, message: 'Fee structure updated successfully!', feeStructure });
             } else {
-                // Check if fee structure already exists for the grade and term
                 const existingFeeStructure = await prisma.feeStructure.findFirst({
-                    where: { gradeId: parseInt(grade), termId: parseInt(term_id), schoolId }
+                    where: { gradeId: parseInt(grade), termId: parseInt(term_id), schoolId },
                 });
 
                 if (existingFeeStructure) {
-                    return res.status(400).json({ error: 'Fee structure for this grade and term already exists.' });
+                    return res.status(400).json({ success: false, error: 'Fee structure for this grade and term already exists.' });
                 }
 
-                // Create a new fee structure
                 const feeStructure = await prisma.feeStructure.create({
                     data: {
                         gradeId: parseInt(grade),
@@ -176,19 +163,23 @@ const manageFeeStructure = async (req, res) => {
                         assBooks: parseFloat(ass_books),
                         diaryFee: parseFloat(diary_fee),
                         activityFee: parseFloat(activity_fee),
-                        others: parseFloat(others),
-                        schoolId
-                    }
+                        others: parseFloat(others || 0),
+                        schoolId,
+                    },
                 });
 
-                res.json({ message: 'Fee structure created successfully!', feeStructure });
+                res.json({ success: true, message: 'Fee structure created successfully!', feeStructure });
             }
         } catch (error) {
+            if (error.code === 'P2002') {
+                return res.status(400).json({ success: false, error: 'Fee structure already exists.' });
+            }
             console.error('Error managing fee structure:', error);
-            res.status(500).json({ error: 'Unable to manage fee structure.' });
+            res.status(500).json({ success: false, error: 'Unable to manage fee structure.' });
         }
     }
 };
+
 
 /**
  *
@@ -391,5 +382,5 @@ const configureGrades = async (req, res) => {
 
 
 
-module.exports = {manageTerms, configureGrades }; // Export functions for use in routes
+module.exports = {manageTerms, configureGrades, manageFeeStructure }; // Export functions for use in routes
 // In the code snippet above, we have defined route handlers for managing terms, fee structures, additional fees, migrating terms, and configuring grades. These handlers interact with the Prisma ORM to perform CRUD operations on the database and return appropriate responses to the client.
