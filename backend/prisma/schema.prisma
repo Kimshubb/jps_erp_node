@@ -112,6 +112,7 @@ model Student {
   currentTerm    Term?         @relation("CurrentTermStudents", fields: [currentTermId], references: [id])
   attendances    Attendance[]
   performances   Performance[]
+  @@unique([id, schoolId]) 
 }
 
 model FeePayment {

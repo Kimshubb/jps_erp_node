@@ -150,5 +150,56 @@ const getGradesAndTerms = async (req, res) => {
     }
 };
 
+const searchStudent = async (req, res) => {
+    try {
+        console.log('Searching for student:', req.query.q);
+        const query = req.query.q || ''; // Search query
+        const schoolId = req.user.schoolId; // Assuming user is authenticated and schoolId is attached to req.user
 
-module.exports = { dashboard, getGradesAndTerms };
+        if (!query) {
+            return res.json([]); // Return an empty array if no query provided
+        }
+
+        // Fetch students matching the search query
+        const students = await prisma.student.findMany({
+            where: {
+                fullName: {
+                    contains: query.toLowerCase(), // Partial match
+                    //mode: 'insensitive' // Case-insensitive search
+                },
+                schoolId: schoolId // Filter by school ID
+            },
+            select: {
+                id: true,
+                fullName: true,
+                currentTerm: {
+                    select: {
+                        id: true,
+                        current: true
+                    }
+                }
+            }
+        });
+        console.log('Filtered students:', students);
+        console.log('Found students:', students.length);
+
+        // Format suggestions for response
+        const suggestions = students.map(student => ({
+            id: student.id,
+            name: student.fullName,
+            term_id: student.currentTermId?.id || null
+        }));
+        console.log('Suggestions:', suggestions);
+
+        res.json(suggestions); // Send suggestions as JSON
+    } catch (error) {
+        console.error('Error fetching students:', error.message);
+        console.log('Error fetching students:', error);
+        res.status(500).json({ error: 'An error occurred while searching for students.' });
+    }
+};
+
+
+
+
+module.exports = { dashboard, getGradesAndTerms, searchStudent}; // Export functions for use in routes

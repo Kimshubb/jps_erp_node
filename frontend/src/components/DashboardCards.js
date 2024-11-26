@@ -1,6 +1,6 @@
 // src/components/DashboardCards.js
 import React from 'react';
-import { Box, Card, CardContent, Typography, Grid2 } from '@mui/material';
+import { Card, CardContent, Typography, Grid2 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 

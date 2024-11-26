@@ -10,6 +10,9 @@ import ConfigureGrades from './pages/ConfigureGrades';
 import MainLayout from './components/MainLayout'; // Import MainLayout
 import Terms from './pages/Terms';
 import ManageFeeStructures from './pages/FeeStructure';
+import ProcessPayment from './pages/ProcessPayments';
+import PrintReceipt from './pages/PrintReceipt';
+import StudentsPayments from './pages/StudentPayments';
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
@@ -124,7 +127,34 @@ const App = () => {
                         </ProtectedRoute>
                     }
                 />
-
+                <Route
+                    path="/payments/new"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <ProcessPayment/>
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/payments/view"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <StudentsPayments/>
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/receipt/:studentId/:paymentId"
+                    element={
+                        <ProtectedRoute>
+                                <PrintReceipt />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Router>

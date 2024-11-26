@@ -145,7 +145,7 @@ const addStudent = async (req, res) => {
 
             const { 
                 fullName, dob, gender, guardianName, 
-                contactNumber1, contactNumber2, grade_id, stream_id 
+                contactNumber1, contactNumber2, grade_id, stream_id, cfBalance
             } = req.body;
 
             // Validate grade and stream combination
@@ -199,6 +199,7 @@ const addStudent = async (req, res) => {
                     guardianName,
                     contactNumber1,
                     contactNumber2,
+                    cfBalance: parseFloat(cfBalance) || 0.0,
                     gradeId: parseInt(grade_id),
                     streamId: parseInt(stream_id),
                     schoolId,

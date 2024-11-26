@@ -26,6 +26,7 @@ router.route('/add')
             body('guardianName').notEmpty().withMessage('Guardian name is required'),
             body('contactNumber1').notEmpty().withMessage('Primary contact number is required'),
             body('contactNumber2').optional().isMobilePhone().withMessage('Secondary contact number is invalid'),
+            body('cfBalance').optional().isFloat({ min: 0 }).withMessage('Carry forward balance must be a non-negative number.'),
             body('grade_id').notEmpty().withMessage('Grade is required'),
             body('stream_id').notEmpty().withMessage('Stream is required')
         ],

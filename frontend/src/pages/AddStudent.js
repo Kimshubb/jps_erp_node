@@ -27,6 +27,7 @@ const AddStudent = () => {
         guardianName: '',
         contactNumber1: '',
         contactNumber2: '',
+        cfBalance: '',
         grade_id: '',
         stream_id: '',
     });
@@ -127,6 +128,7 @@ const AddStudent = () => {
                 guardianName: '',
                 contactNumber1: '',
                 contactNumber2: '',
+                cfBalance: '',
                 grade_id: '',
                 stream_id: '',
             });
@@ -213,6 +215,16 @@ const AddStudent = () => {
                     name="contactNumber2"
                     value={formData.contactNumber2}
                     onChange={handleInputChange}
+                    sx={{ mb: 3 }}
+                />
+                <TextField
+                    fullWidth
+                    label="Carry Forward Balance"
+                    name="cfBalance"
+                    value={formData.cfBalance || ''} // Default to an empty string
+                    onChange={(e) => setFormData((prev) => ({ ...prev, cfBalance: e.target.value }))}
+                    type="number"
+                    placeholder="Enter carry forward balance (if any)"
                     sx={{ mb: 3 }}
                 />
                 <FormControl fullWidth sx={{ mb: 3 }}>
