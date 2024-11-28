@@ -1,5 +1,6 @@
 const prisma = require('../utils/prismaClient');
-const  calculateBalance = require('../utils/calculateBalance');
+//const  calculateBalance = require('../utils/calculateBalance');
+const { fetchBalanceData, calculateBalance } = require('../utils/calculateBalance');
 const { validationResult } = require('express-validator');
 const { DateTime } = require('luxon'); // For date handling
 //const FeesUtility = require('../utils/FeeUtility');
@@ -49,7 +50,9 @@ const newPayment = async (req, res) => {
         }
 
         // Calculate balance
-        const currentBalance = await calculateBalance(student.id, currentTerm.id);
+        //const currentBalance = await calculateBalance(student.id, currentTerm.id);
+        const balanceData = await fetchBalanceData(student.id, currentTerm.id);
+        const currentBalance = calculateBalance(balanceData);
 
         // Handle Mpesa transaction if applicable
         if (method === 'Mpesa' || method === 'Bank') {
@@ -92,6 +95,8 @@ const newPayment = async (req, res) => {
         redirectUrl: `/receipt/${studentId}/${transaction.id}`
     });
 };
+
+
 
 const printReceipt = async (req, res) => {
     const { studentId, paymentId } = req.params;
@@ -181,69 +186,74 @@ const printReceipt = async (req, res) => {
 const studentPayments = async (req, res) => {
     const gradeFilter = req.query.grade || 'all';
     const streamFilter = req.query.stream || 'all';
+    const termFilter = req.query.term || 'current'; // Default to current term
     const page = parseInt(req.query.page) || 1;
     const perPage = 15;
     const schoolId = req.user.schoolId;
 
     try {
-        // Fetch current term for the school
-        const currentTerm = await prisma.term.findFirst({
-            where: { current: true, schoolId }
-        });
+        let termId;
 
-        if (!currentTerm) {
-            return res.status(400).json({ message: 'No active term found for this school.' });
+        if (termFilter === 'current') {
+            const currentTerm = await prisma.term.findFirst({ where: { current: true, schoolId } });
+            if (!currentTerm) {
+                return res.status(400).json({ message: 'No active term found for this school.' });
+            }
+            termId = currentTerm.id;
+        } else {
+            termId = parseInt(termFilter);
         }
 
-        // Query filters for students
         const studentFilters = {
-            grade: {
-                schoolId: schoolId
-            },
+            schoolId,
             active: true,
             ...(gradeFilter !== 'all' && { gradeId: parseInt(gradeFilter) }),
             ...(streamFilter !== 'all' && { streamId: parseInt(streamFilter) })
         };
 
-        // Fetch paginated students with grade and stream
-        const studentsPaginated = await prisma.student.findMany({
+        const students = await prisma.student.findMany({
             where: studentFilters,
             skip: (page - 1) * perPage,
             take: perPage,
-            include: {
-                grade: true,
-                stream: true
-            }
+            include: { grade: true, stream: true }
         });
 
         const totalStudents = await prisma.student.count({ where: studentFilters });
 
-        // Calculate total paid and balance for each student
         const studentPaymentDetails = await Promise.all(
-            studentsPaginated.map(async (student) => {
-                const totalPaid = await prisma.feePayment.aggregate({
-                    where: {
-                        studentId: student.id,
-                        termId: currentTerm.id
-                    },
-                    _sum: { amount: true }
-                }).then(result => result._sum.amount || 0);
-
-                const { balance } = await calculateBalance(student.id);
+            students.map(async (student) => {
+                const balanceData = await fetchBalanceData(student.id, termId);
+                const balance = calculateBalance(balanceData);
 
                 return {
                     id: student.id,
                     fullName: student.fullName,
                     grade: student.grade.name,
+                    gradeId: student.grade.id, // Ensure gradeId is included
                     stream: student.stream?.name || 'N/A',
-                    totalPaid,
+                    totalPaid: balanceData.paidAmount,
                     balance
                 };
             })
         );
 
+        const validGradeIds = studentPaymentDetails
+            .map((s) => s.gradeId)
+            .filter((id) => id !== undefined); // Filter out undefined values
+
+        const streams = await prisma.stream.findMany({
+            where: {
+                gradeId: { in: validGradeIds }
+            }
+        });
+
         res.json({
             students: studentPaymentDetails,
+            filters: {
+                grades: await prisma.grade.findMany({ where: { schoolId } }),
+                terms: await prisma.term.findMany({ where: { schoolId } }),
+                streams
+            },
             pagination: {
                 page,
                 perPage,
@@ -253,9 +263,12 @@ const studentPayments = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching students payments:', error);
-        res.status(500).json({ message: 'An error occurred while fetching students payments.' });
+        res.status(500).json({ message: 'Failed to fetch students payments.' });
     }
 };
+
+
+
 
 /*
 // Fetches student payments with balance and carry-forward balance for the current term.

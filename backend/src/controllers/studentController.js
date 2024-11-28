@@ -11,22 +11,23 @@ const { DateTime } = require('luxon');
  */
 
 const getStudents = async (req, res) => {
-    console.log('Get Students Request:', req.query);
-    console.log('received request for /api/students/view-students');
-    const page = Math.max(parseInt(req.query.page) || 1, 1); // Ensure valid page number
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
     const gradeFilter = req.query.grade || 'all';
-    const termFilter = req.query.term || 'all';
+    const activeFilter = req.query.active || 'all'; // New active filter
     const streamFilter = req.query.stream || 'all';
     const perPage = 15;
-    const schoolId = req.user.schoolId; // Assume req.user is populated by authentication middleware
-    console.log('Get Students User schoolId:', schoolId);
+    const schoolId = req.user.schoolId;
 
     try {
         // Build the base filter for students
         let studentFilter = { schoolId };
         if (gradeFilter !== 'all' && !isNaN(gradeFilter)) studentFilter.gradeId = parseInt(gradeFilter);
-        if (termFilter !== 'all' && !isNaN(termFilter)) studentFilter.currentTermId = parseInt(termFilter);
         if (streamFilter !== 'all' && !isNaN(streamFilter)) studentFilter.streamId = parseInt(streamFilter);
+        
+        // Add active filter logic
+        if (activeFilter !== 'all') {
+            studentFilter.active = activeFilter === 'true'; // Convert to boolean
+        }
 
         // Fetch paginated students based on filters
         const students = await prisma.student.findMany({
@@ -35,37 +36,31 @@ const getStudents = async (req, res) => {
             take: perPage,
             include: {
                 grade: { select: { name: true } },
-                stream: { select: { name: true } },
-                currentTerm: { select: { name: true } }
+                stream: { select: { name: true } }
             }
         });
-        console.log('Fetched students:', students);
 
         // Fetch total count for pagination
         const totalStudents = await prisma.student.count({
             where: studentFilter
         });
-        console.log('Total students:', totalStudents);
 
-        // Fetch grades, terms, and streams for filter options
-        const grades = await prisma.grade.findMany({ where: { schoolId }, select: { id: true, name: true } });
-        const terms = await prisma.term.findMany({ where: { schoolId }, select: { id: true, name: true } });
+        // Fetch grades and streams for filter options
+        const grades = await prisma.grade.findMany({ 
+            where: { schoolId }, 
+            select: { id: true, name: true } 
+        });
         const streams = await prisma.stream.findMany({
             where: {
-                grade: { schoolId: schoolId, 
-                },
+                grade: { schoolId: schoolId },
             },
             select: { id: true, name: true }
         });
-        console.log('Fetched grades:', grades);
-        console.log('Fetched terms:', terms);
-        console.log('Fetched streams:', streams);
 
         // Return response with paginated students and filters
         res.json({
             students,
             grades,
-            terms,
             streams,
             pagination: {
                 page,
@@ -74,7 +69,6 @@ const getStudents = async (req, res) => {
                 totalPages: Math.ceil(totalStudents / perPage)
             }
         });
-
     } catch (error) {
         console.error('Error fetching students:', error);
         res.status(500).json({ message: 'An error occurred while fetching students.' });
@@ -225,46 +219,61 @@ const addStudent = async (req, res) => {
 
 const updateStudent = async (req, res) => {
     const { studentId } = req.params;
+    const { schoolId } = req.user;  // Assuming this comes from auth middleware
 
     try {
-        // Fetch the student
+        // Get student data along with related grade and stream data
         const student = await prisma.student.findUnique({
-            where: { student_id: studentId }
+            where: { id: studentId },
+            include: {
+                grade: true,
+                stream: true
+            }
         });
+
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        // Handle GET request: Return student details for form population
-        if (req.method === 'GET') {
-            return res.json({ student });
-        }
-
-        // Handle POST request: Update student data
-        const { full_name, dob, gender, guardian_name, contact_number1, contact_number2, grade_id, stream_id } = req.body;
-
-        const updatedStudent = await prisma.student.update({
-            where: { student_id: studentId },
-            data: {
-                full_name,
-                dob: new Date(dob),
-                gender,
-                guardian_name,
-                contact_number1,
-                contact_number2,
-                gradeId: parseInt(grade_id),
-                streamId: parseInt(stream_id)
+        // Get all grades for the school
+        const grades = await prisma.grade.findMany({
+            where: { schoolId },
+            select: {
+                id: true,
+                name: true
+            },
+            orderBy: {
+                name: 'asc'
             }
         });
 
-        res.json({ message: 'Student details updated successfully!', student: updatedStudent });
+        // Get streams for the valid grades
+        const validGradeIds = grades.map(grade => grade.id);
+        const streams = await prisma.stream.findMany({
+            where: {
+                gradeId: { in: validGradeIds }
+            },
+            select: {
+                id: true,
+                name: true,
+                gradeId: true
+            }
+        });
+
+        res.json({
+            student,
+            grades,
+            streams
+        });
 
     } catch (error) {
-        console.error('Error updating student:', error);
-        res.status(500).json({ message: 'An error occurred while updating the student.' });
+        console.error('Error fetching student data:', error);
+        res.status(500).json({ 
+            message: 'An error occurred while fetching student data',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
-
 
 /**
  * Toggles a student's active status.
@@ -272,35 +281,102 @@ const updateStudent = async (req, res) => {
  */
 const toggleStudentStatus = async (req, res) => {
     const { studentId } = req.params;
+    const schoolId = req.user.schoolId; // Add schoolId from authentication
+    console.log("Student ID:", studentId);
+    console.log("School ID:", schoolId);
 
     try {
-        // Fetch the student
+        // Fetch the student with the unique combination of studentId and schoolId
         const student = await prisma.student.findUnique({
-            where: { student_id: studentId }
+            where: { 
+                id_schoolId: { 
+                    id: studentId, 
+                    schoolId 
+                } 
+            }
         });
+
         if (!student) {
+            console.error("Student not found for ID:", studentId, "and School ID:", schoolId);
             return res.status(404).json({ message: 'Student not found' });
         }
 
         // Toggle the active status and set `left_date` if inactive
         const updatedStudent = await prisma.student.update({
-            where: { student_id: studentId },
+            where: { 
+                id_schoolId: { 
+                    id: studentId, 
+                    schoolId 
+                } 
+            },
             data: {
-                isActive: !student.active,
-                left_date: student.active ? DateTime.now().toISODate() : null
+                active: !student.active,
+                leftDate: student.active ? new Date() : null, // Set left_date when becoming inactive
             }
         });
+        console.log('Updated student:', updatedStudent);
 
         const status = updatedStudent.active ? 'active' : 'inactive';
-        res.json({ message: `Student marked as ${status}!`, student: updatedStudent });
-
+        res.json({ 
+            message: `Student marked as ${status}!`, 
+            student: {
+                id: updatedStudent.id,
+                fullName: updatedStudent.fullName,
+                active: updatedStudent.active,
+                leftDate: updatedStudent.leftDate
+            }
+        });
     } catch (error) {
         console.error('Error toggling student status:', error);
         res.status(500).json({ message: 'An error occurred while updating the student status.' });
     }
 };
 
+const getStudentById = async (req, res) => {
+    const { studentId } = req.params;
+    const schoolId = req.user.schoolId;
+
+    try {
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            include: {
+                grade: { select: { name: true } },
+                stream: { select: { name: true } }
+            }
+        });
+
+        if (!student || student.schoolId !== schoolId) {
+            return res.status(404).json({ message: 'Student not found or does not belong to this school.' });
+        }
+
+        const grades = await prisma.grade.findMany({
+            where: { schoolId },
+            select: { id: true, name: true }
+        });
+        const streams = await prisma.stream.findMany({
+            where: {
+                grade: {
+                    schoolId: schoolId // Explicitly filter grades by schoolId
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                gradeId: true // Include gradeId to verify relationships if necessary
+            }
+        });
+
+        res.json({ student, grades, streams });
+    } catch (error) {
+        console.error('Error fetching student:', error);
+        res.status(500).json({ message: 'An error occurred while fetching the student.' });
+    }
+};
+
 module.exports = { 
     addStudent,  
-    getStudents
+    getStudents,
+    toggleStudentStatus,
+    updateStudent,
+    getStudentById
  };

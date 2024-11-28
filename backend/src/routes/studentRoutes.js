@@ -1,5 +1,5 @@
 const express = require('express');
-const { addStudent, getStudents } = require('../controllers/StudentController');
+const { addStudent, getStudents, toggleStudentStatus, getStudentById, updateStudent } = require('../controllers/StudentController');
 console.log("Add student function:", addStudent);
 const { body, param } = require('express-validator');
 //const { authenticateToken } = require('../middleware/authMiddleware');
@@ -12,9 +12,15 @@ const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-
-
 router.get('/view-students', getStudents);
+
+router.patch('/:studentId/toggle-status', toggleStudentStatus);
+/*router.patch('/students/:studentId/toggle-status', (req, res, next) => {
+    console.log('Middleware hit for PATCH /api/students/:studentId/toggle-status');
+    next();
+});*/
+
+//router.post('/students/:studentId/inactive', toggleStudentStatus);
 //Route for adding a student
 router.route('/add')
     .get( asyncHandler(addStudent))
@@ -33,8 +39,17 @@ router.route('/add')
         asyncHandler(addStudent)
     );
 
+// Update student details
+//PATCH /api/students/:studentId/update
+router.patch('/:studentId/update', updateStudent);
 
-/* Route for updating a student
+// Get student by ID
+//GET /api/students/:studentId
+router.get('/:studentId', getStudentById);
+
+
+
+/**   Route for updating a student
 router.route('/students/:studentId/update')
     .get(
         isAuthenticated,
@@ -57,15 +72,8 @@ router.route('/students/:studentId/update')
             param('studentId').isInt().withMessage('Invalid student ID')
         ],
         asyncHandler(updateStudent)
-    );
+    );*/
 
-// Route for toggling a student's active status
-router.patch('/students/:studentId/status',
-    isAuthenticated,
-    [
-        param('studentId').isInt().withMessage('Invalid student ID')
-    ],
-    asyncHandler(toggleStudentStatus)
-);*/
+
 
 module.exports = router;
