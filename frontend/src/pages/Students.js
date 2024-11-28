@@ -19,13 +19,15 @@ import {
     Alert,
 } from '@mui/material';
 import axiosInstance from '../utils/axiosInstance';
+import { useNavigate } from 'react-router-dom';
+
 
 const Students = () => {
     const [students, setStudents] = useState([]);
     const [grades, setGrades] = useState([]);
-    const [terms, setTerms] = useState([]);
+    //const [terms, setTerms] = useState([]);
     const [streams, setStreams] = useState([]);
-    const [filters, setFilters] = useState({ grade: 'all', term: 'all', stream: 'all' });
+    const [filters, setFilters] = useState({ grade: 'all', active: 'all', stream: 'all' });
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -40,15 +42,14 @@ const Students = () => {
                 params: {
                     page: pagination.page,
                     grade: filters.grade,
-                    term: filters.term,
                     stream: filters.stream,
+                    active: filters.active,
                 },
             });
 
-            const { students, grades, terms, streams, pagination: newPagination } = response.data;
+            const { students, grades, streams, pagination: newPagination } = response.data;
             setStudents(students);
             setGrades(grades);
-            setTerms(terms);
             setStreams(streams);
             setPagination(newPagination);
         } catch (err) {
@@ -58,6 +59,36 @@ const Students = () => {
             setLoading(false);
         }
     }, [filters, pagination.page]);
+
+    const handleToggleStudentStatus = async (studentId) => {
+        try {
+            const response = await axiosInstance.patch(`/api/students/${studentId}/toggle-status`);
+            
+            // Update the students list with the new active status
+            setStudents(prevStudents => 
+                prevStudents.map(student => 
+                    student.id === studentId 
+                    ? { 
+                        ...student, 
+                        active: response.data.student.active,
+                        leftDate: response.data.student.leftDate
+                    } 
+                    : student
+                )
+            );
+            console.log(response.data.student.active);
+            console.log("Updated student:", response.data.student);
+    
+            // Optional: Show a success message
+           // enqueueSnackbar(response.data.message, { variant: 'success' });
+        } catch (error) {
+            console.error('Error toggling student status:', error.response?.data || error); 
+           /* enqueueSnackbar(
+                error.response?.data?.message || 'Failed to update student status', 
+                { variant: 'error' }
+            );*/
+        }
+    };
 
     useEffect(() => {
         fetchStudents();
@@ -75,6 +106,7 @@ const Students = () => {
             setPagination((prev) => ({ ...prev, page: newPage }));
         }
     };
+    const navigate = useNavigate();
 
     return (
         <Container>
@@ -106,22 +138,6 @@ const Students = () => {
                     </Select>
                 </FormControl>
 
-                {/* Term Filter */}
-                <FormControl fullWidth>
-                    <InputLabel>Term</InputLabel>
-                    <Select
-                        value={filters.term}
-                        onChange={(e) => handleFilterChange('term', e.target.value)}
-                    >
-                        <MenuItem value="all">All Terms</MenuItem>
-                        {terms.map((term) => (
-                            <MenuItem key={term.id} value={term.id}>
-                                {term.name}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
                 {/* Stream Filter */}
                 <FormControl fullWidth>
                     <InputLabel>Stream</InputLabel>
@@ -137,6 +153,20 @@ const Students = () => {
                         ))}
                     </Select>
                 </FormControl>
+
+                {/* Term Filter */}
+                <FormControl fullWidth>
+                    <InputLabel>Active Status</InputLabel>
+                    <Select
+                        value={filters.term}
+                        onChange={(e) => handleFilterChange('active', e.target.value)}
+                    >
+                        <MenuItem value="all">All Students</MenuItem>
+                        <MenuItem value="true">Active</MenuItem>
+                        <MenuItem value="false">Inactive</MenuItem>
+                    </Select>
+                </FormControl>
+
             </Box>
 
             {/* Loading and Error States */}
@@ -163,17 +193,45 @@ const Students = () => {
                                         <TableCell>Primary Contact</TableCell>
                                         <TableCell>Secondary Contact</TableCell>
                                         <TableCell>Gender</TableCell>
+                                        <TableCell>Status</TableCell>
+                                        <TableCell>Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {students.map((student) => (
-                                        <TableRow key={student.id}>
+                                        <TableRow 
+                                            key={student.id}
+                                            sx={{ backgroundColor: !student.active ? '#ffcccb' : 'inherit' }}
+                                        >
                                             <TableCell>{student.id}</TableCell>
                                             <TableCell>{student.fullName}</TableCell>
                                             <TableCell>{student.guardianName}</TableCell>
                                             <TableCell>{student.contactNumber1}</TableCell>
                                             <TableCell>{student.contactNumber2 || 'N/A'}</TableCell>
                                             <TableCell>{student.gender}</TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    variant="outlined"
+                                                    color={student.active ? "primary" : "error"}
+                                                    onClick={() => handleToggleStudentStatus(student.id)}
+                                                    sx={{ 
+                                                        width: '100px', 
+                                                        textTransform: 'capitalize' 
+                                                    }}
+                                                >
+                                                    {student.active ? 'Active' : 'Inactive'}
+                                                </Button>
+                                        </TableCell>
+                                        <TableCell>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    size="small"
+                                                    onClick={() => navigate(`/students/${student.id}/edit`)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                        </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

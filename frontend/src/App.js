@@ -13,6 +13,7 @@ import ManageFeeStructures from './pages/FeeStructure';
 import ProcessPayment from './pages/ProcessPayments';
 import PrintReceipt from './pages/PrintReceipt';
 import StudentsPayments from './pages/StudentPayments';
+import EditStudent from './pages/EditStudent';
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
@@ -97,6 +98,16 @@ const App = () => {
                         </ProtectedRoute>
                   }
                 />
+                <Route
+                    path="/students/:studentId/edit"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <EditStudent />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+               />
                 <Route
                     path="/settings/configure-grades"
                     element={

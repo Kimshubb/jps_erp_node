@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-    Container,
     Table,
     TableBody,
     TableCell,
@@ -8,109 +7,81 @@ import {
     TableHead,
     TableRow,
     Paper,
+    Box,
+    Container,
     Button,
-    CircularProgress,
-    FormControl,
-    InputLabel,
     Select,
     MenuItem,
+    FormControl,
+    InputLabel,
+    CircularProgress,
+    Typography,
     Alert,
-    Pagination
+    Pagination,
 } from '@mui/material';
 import axiosInstance from '../utils/axiosInstance';
 
 const StudentsPayments = () => {
     const [students, setStudents] = useState([]);
-    const [terms, setTerms] = useState([]);
     const [grades, setGrades] = useState([]);
+    const [terms, setTerms] = useState([]);
+    const [streams, setStreams] = useState([]);
+    const [filters, setFilters] = useState({ grade: 'all', term: 'current', stream: 'all' });
+    const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [filters, setFilters] = useState({
-        grade: 'all',
-        stream: 'all'
-    });
-    const [pagination, setPagination] = useState({
-        page: 1,
-        perPage: 15,
-        total: 0,
-        totalPages: 1
-    });
 
-    // Fetch Terms and Grades for Filters/Forms
-    const fetchTermsAndGrades = async () => {
+    const fetchStudentsPayments = useCallback(async () => {
         try {
-            const response = await axiosInstance.get('/api/grades-and-terms');
-            setTerms(response.data.terms);
-            setGrades(response.data.grades);
-        } catch (err) {
-            console.error('Error fetching terms and grades:', err);
-            setError('Failed to fetch terms and grades.');
-        }
-    };
+            setLoading(true);
+            setError(null);
 
-    // Fetch student payments
-    const fetchPayments = async (page = 1) => {
-        setLoading(true);
-        setError(null);
-
-        try {
             const response = await axiosInstance.get('/api/payments/view', {
                 params: { 
-                    page,
+                    page: pagination.page,
                     grade: filters.grade,
-                    stream: filters.stream
+                    term: filters.term,
+                    stream: filters.stream,
                 }
             });
-            
-            setStudents(response.data.students);
-            setPagination(response.data.pagination);
+
+            const { students, filters: filterOptions, pagination: newPagination } = response.data;
+
+            setStudents(students);
+            setGrades(filterOptions.grades);
+            setTerms(filterOptions.terms);
+            setStreams(filterOptions.streams);
+            setPagination(newPagination);
         } catch (err) {
             console.error('Error fetching student payments:', err);
-            setError('Failed to fetch student payments. Please try again.');
+            setError(err.response?.data?.message || 'Failed to load student payments.');
         } finally {
             setLoading(false);
         }
+    }, [filters, pagination.page]);
+
+    useEffect(() => {
+        fetchStudentsPayments();
+    }, [fetchStudentsPayments]);
+
+    const handleFilterChange = (filterName, value) => {
+        setFilters((prev) => ({ ...prev, [filterName]: value }));
+        setPagination((prev) => ({ ...prev, page: 1 })); // Reset to the first page
     };
 
-    // Initial data fetch
-    useEffect(() => {
-        fetchTermsAndGrades();
-    }, []);
-
-    // Fetch payments when page or filters change
-    useEffect(() => {
-        fetchPayments(pagination.page);
-    }, [pagination.page, filters]);
-
-    // Handle filter changes
-    const handleFilterChange = (name, value) => {
-        setFilters((prev) => ({ 
-            ...prev, 
-            [name]: value,
-            // Reset stream if grade changes
-            ...(name === 'grade' && value !== 'all' && { stream: 'all' })
-        }));
-        setPagination((prev) => ({ ...prev, page: 1 })); // Reset to first page
-    };
-
-    // Paginate results
     const handlePageChange = (event, value) => {
         setPagination((prev) => ({ ...prev, page: value }));
     };
 
-    // Get streams for the selected grade
-    const getStreamsForGrade = (gradeId) => {
-        return gradeId === 'all' 
-            ? [] 
-            : grades.find(g => g.id === parseInt(gradeId))?.streams || [];
-    };
-
     return (
         <Container>
-            <h2>Student Payments</h2>
+            <Typography variant="h4" gutterBottom>
+                Student Payments
+            </Typography>
+
             {error && <Alert severity="error">{error}</Alert>}
-            
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+
+            <Box display="flex" gap={2} mb={4}>
                 {/* Grade Filter */}
                 <FormControl fullWidth>
                     <InputLabel>Grade</InputLabel>
@@ -120,8 +91,24 @@ const StudentsPayments = () => {
                     >
                         <MenuItem value="all">All Grades</MenuItem>
                         {grades.map((grade) => (
-                            <MenuItem key={grade.id} value={grade.id.toString()}>
+                            <MenuItem key={grade.id} value={grade.id}>
                                 {grade.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                {/* Term Filter */}
+                <FormControl fullWidth>
+                    <InputLabel>Term</InputLabel>
+                    <Select
+                        value={filters.term}
+                        onChange={(e) => handleFilterChange('term', e.target.value)}
+                    >
+                        <MenuItem value="current">Current Term</MenuItem>
+                        {terms.map((term) => (
+                            <MenuItem key={term.id} value={term.id}>
+                                {term.name}
                             </MenuItem>
                         ))}
                     </Select>
@@ -133,17 +120,16 @@ const StudentsPayments = () => {
                     <Select
                         value={filters.stream}
                         onChange={(e) => handleFilterChange('stream', e.target.value)}
-                        disabled={filters.grade === 'all'}
                     >
                         <MenuItem value="all">All Streams</MenuItem>
-                        {getStreamsForGrade(filters.grade).map((stream) => (
-                            <MenuItem key={stream.id} value={stream.id.toString()}>
+                        {streams.map((stream) => (
+                            <MenuItem key={stream.id} value={stream.id}>
                                 {stream.name}
                             </MenuItem>
                         ))}
                     </Select>
                 </FormControl>
-            </div>
+            </Box>
 
             {loading ? (
                 <CircularProgress />
@@ -152,38 +138,30 @@ const StudentsPayments = () => {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Student Name</TableCell>
+                                <TableCell>Student ID</TableCell>
+                                <TableCell>Name</TableCell>
                                 <TableCell>Grade</TableCell>
                                 <TableCell>Stream</TableCell>
-                                <TableCell>Total Paid (KES)</TableCell>
-                                <TableCell>Balance (KES)</TableCell>
-                                <TableCell>Actions</TableCell>
+                                <TableCell>Total Paid</TableCell>
+                                <TableCell>Balance</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {students.map((student) => (
                                 <TableRow key={student.id}>
+                                    <TableCell>{student.id}</TableCell>
                                     <TableCell>{student.fullName}</TableCell>
                                     <TableCell>{student.grade}</TableCell>
                                     <TableCell>{student.stream}</TableCell>
-                                    <TableCell>{student.totalPaid}</TableCell>
-                                    <TableCell>{student.balance}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={() => window.location.href = `/receipt/${student.id}`}
-                                        >
-                                            View Fee Statement
-                                        </Button>
-                                    </TableCell>
+                                    <TableCell>KES {student.totalPaid}</TableCell>
+                                    <TableCell>KES {student.balance}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </TableContainer>
             )}
-            
+
             <Pagination
                 count={pagination.totalPages}
                 page={pagination.page}
