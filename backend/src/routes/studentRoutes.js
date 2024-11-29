@@ -1,5 +1,5 @@
 const express = require('express');
-const { addStudent, getStudents, toggleStudentStatus, getStudentById, updateStudent } = require('../controllers/StudentController');
+const { addStudent, getStudents, toggleStudentStatus, getStudentById, updateStudent, updateStudentAdditionalFees, getStudentAdditionalFees, associateStudentWithFee } = require('../controllers/StudentController');
 console.log("Add student function:", addStudent);
 const { body, param } = require('express-validator');
 //const { authenticateToken } = require('../middleware/authMiddleware');
@@ -47,7 +47,9 @@ router.patch('/:studentId/update', updateStudent);
 //GET /api/students/:studentId
 router.get('/:studentId', getStudentById);
 
-
+router.get('/:studentId/additional-fees', getStudentAdditionalFees);
+router.patch('/:studentId/additional-fees', updateStudentAdditionalFees);
+router.post('/associate-student-with-fee', associateStudentWithFee);
 
 /**   Route for updating a student
 router.route('/students/:studentId/update')

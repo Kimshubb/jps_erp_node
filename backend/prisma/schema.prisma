@@ -9,6 +9,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model User {
   id             Int             @id @default(autoincrement())
   username       String          @unique @db.VarChar(20)
@@ -85,7 +86,7 @@ model AdditionalFee {
   amount    Float
   schoolId  Int       @map("school_id")
   school    School    @relation(fields: [schoolId], references: [id])
-  students  Student[] 
+  students  Student[] @relation("StudentAdditionalFees") 
 }
 
 model Student {
@@ -108,7 +109,7 @@ model Student {
   grade          Grade         @relation(fields: [gradeId], references: [id])
   stream         Stream        @relation(fields: [streamId], references: [id])
   feePayments    FeePayment[]
-  additionalFees AdditionalFee[]
+  additionalFees AdditionalFee[] @relation("StudentAdditionalFees")
   currentTerm    Term?         @relation("CurrentTermStudents", fields: [currentTermId], references: [id])
   attendances    Attendance[]
   performances   Performance[]

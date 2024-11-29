@@ -1,5 +1,5 @@
 const express = require('express');
-const { manageTerms, manageFeeStructure, /*migrateTerm, */configureGrades} = require('../controllers/settingsController');
+const { manageTerms, manageFeeStructure, createUser, getUsers, configureGrades, toggleUserStatus, createAdditionalFee, getAdditionalFees} = require('../controllers/settingsController');
 const { body } = require('express-validator');
 
 const router = express.Router();
@@ -40,6 +40,17 @@ router.route('/fee-structure')
     );*/
 
 router.route('/fee-structure').get(manageFeeStructure).post(manageFeeStructure);
+//create user route
+router.post('/new-user', createUser);
+//get users route
+router.get('/users', getUsers);
+
+router.patch('/users/:id/toggle-status', toggleUserStatus);
+
+router.get('/additional-fees', getAdditionalFees);
+
+router.post('/additional-fees', createAdditionalFee);// Call the controller function
+
 
 
 /** 

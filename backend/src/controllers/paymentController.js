@@ -267,8 +267,109 @@ const studentPayments = async (req, res) => {
     }
 };
 
+const getStudentsWithFilters = async (req, res) => {
+    const { schoolId } = req.user.schoolId; // Assumes schoolId is extracted from the authenticated user.
+    const { page = 1, limit = 10, gradeId, streamId, feeId } = req.query; // Pagination and filters
 
+    try {
+        const pageNumber = parseInt(page, 10);
+        const pageSize = parseInt(limit, 10);
+        const skip = (pageNumber - 1) * pageSize;
 
+        // Fetch grades for the school
+        const grades = await prisma.grade.findMany({
+            where: { schoolId },
+            select: {
+                id: true,
+                name: true,
+            },
+            orderBy: { name: 'asc' },
+        });
+
+        // Get streams for the valid grades
+        const validGradeIds = grades.map((grade) => grade.id);
+        const streams = await prisma.stream.findMany({
+            where: {
+                gradeId: { in: validGradeIds },
+            },
+            select: {
+                id: true,
+                name: true,
+                gradeId: true,
+            },
+        });
+        // Fetch additional fees for the school
+        const additionalFees = await prisma.additionalFee.findMany({
+            where: { schoolId },
+            select: {
+                id: true,
+                feeName: true,
+                amount: true,
+            },
+        });
+
+        // Build filters
+        const filters = {
+            schoolId,
+        };
+        if (gradeId) {
+            filters.gradeId = parseInt(gradeId, 10);
+        }
+        if (streamId) {
+            filters.streamId = parseInt(streamId, 10);
+        }
+        if (feeId) {
+            filters.additionalFees = {
+                some: { id: parseInt(feeId, 10) },
+            };
+        }
+
+        // Fetch students with pagination and filters
+        const [students, totalStudents] = await Promise.all([
+            prisma.student.findMany({
+                where: filters,
+                skip,
+                take: pageSize,
+                include: {
+                    grade: true,
+                    stream: true,
+                    additionalFees: true, // Include additional fees to count them
+                },
+            }),
+            prisma.student.count({
+                where: filters,
+            }),
+        ]);
+
+        // Add additional fees count to each student
+        const studentsWithFeesCount = students.map((student) => ({
+            ...student,
+            additionalFeesCount: student.additionalFees.length,
+        }));
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalStudents / pageSize);
+
+        // Respond with data
+        res.json({
+            metadata: {
+                page: pageNumber,
+                limit: pageSize,
+                totalStudents,
+                totalPages,
+            },
+            filters: {
+                grades,
+                streams,
+                additionalFees,
+            },
+            students: studentsWithFeesCount,
+        });
+    } catch (error) {
+        console.error('Error fetching students with filters:', error);
+        res.status(500).json({ error: 'Failed to fetch students.' });
+    }
+};
 
 /*
 // Fetches student payments with balance and carry-forward balance for the current term.
@@ -685,4 +786,4 @@ const addAdditionalFee = async (req, res) => {
     }
 };*/
 
-module.exports = { newPayment, printReceipt, studentPayments/* viewAllPayments, feeReports, searchStudentPayments, addAdditionalFee*/ };
+module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments/* viewAllPayments, feeReports, searchStudentPayments, addAdditionalFee*/ };

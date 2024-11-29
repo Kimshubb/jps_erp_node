@@ -1,6 +1,6 @@
 // src/routes/paymentRoutes.js
 const express = require('express');
-const { newPayment, printReceipt, /* recentPayments, feeReports, searchStudentPayments, addAdditionalFee*/ studentPayments} = require('../controllers/paymentController');
+const { newPayment, printReceipt, getStudentsWithFilters, studentPayments} = require('../controllers/paymentController');
 //const { body } = require('express-validator');
 //const { isAuthenticated } = require('../middleware/authMiddleware'); // Custom middleware for authentication
 
@@ -20,6 +20,7 @@ router.post(
 
 router.post('/new', newPayment);
 
+
 // Route to fetch a receipt
 // GET /api/payments/student/:studentId/receipt/:paymentId
 router.get('/student/:studentId/receipt/:paymentId', printReceipt);
@@ -27,6 +28,10 @@ router.get('/student/:studentId/receipt/:paymentId', printReceipt);
 // Route to fetch all students payments
 // GET /api/payments/view
 router.get('/view', studentPayments);
+
+// Route to fetch students $ associated additonal payments
+// GET /api/payments/view-addfee
+router.get('/view-addfees', getStudentsWithFilters);
 
 /**  Define the student payments route
 router.get('/student_payments', isAuthenticated, studentPayments);

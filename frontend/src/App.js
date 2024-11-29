@@ -14,6 +14,10 @@ import ProcessPayment from './pages/ProcessPayments';
 import PrintReceipt from './pages/PrintReceipt';
 import StudentsPayments from './pages/StudentPayments';
 import EditStudent from './pages/EditStudent';
+import ManageUsers from './pages/ManageUsers';
+import AdditionalFeesPage from './pages/AdditionalFees';
+import AdditionalFees from './pages/AddFee';
+import ViewAddfees from './pages/ViewAddfees';
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
@@ -108,6 +112,16 @@ const App = () => {
                         </ProtectedRoute>
                     }
                />
+               <Route
+                    path="/students/:studentId/add-fees"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <AdditionalFees/>
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+               />
                 <Route
                     path="/settings/configure-grades"
                     element={
@@ -129,11 +143,31 @@ const App = () => {
                     }
                 />
                 <Route
+                    path="/settings/additional-fees"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <AdditionalFeesPage />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/settings/fee-structures"
                     element={
                         <ProtectedRoute>
                             <MainLayout>
                                 <ManageFeeStructures />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/settings/users"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <ManageUsers />
                             </MainLayout>
                         </ProtectedRoute>
                     }
@@ -154,6 +188,16 @@ const App = () => {
                         <ProtectedRoute>
                             <MainLayout>
                                 <StudentsPayments/>
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/payments/view-addfees"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <ViewAddfees/>
                             </MainLayout>
                         </ProtectedRoute>
                     }

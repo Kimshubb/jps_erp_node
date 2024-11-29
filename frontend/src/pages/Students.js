@@ -231,6 +231,14 @@ const Students = () => {
                                                 >
                                                     Edit
                                                 </Button>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    size='small'
+                                                    onClick={() => navigate(`/students/${student.id}/add-fees`)}
+                                                >
+                                                Add Fee
+                                                </Button>
                                         </TableCell>
                                         </TableRow>
                                     ))}

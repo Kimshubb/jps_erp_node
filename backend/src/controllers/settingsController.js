@@ -1,6 +1,7 @@
 //src/controllers/settingsController.js
 const prisma = require('../utils/prismaClient');
 const { validationResult } = require('express-validator');
+const bcrypt = require('bcrypt');
 
 // GET and POST route handler
 const manageTerms = async (req, res) => {
@@ -181,66 +182,54 @@ const manageFeeStructure = async (req, res) => {
 };
 
 
-/**
- *
- * @param {*} req 
- * @param {*} res 
- * @returns 
- */
-// GET and POST route handler for managing additional fees
-const manageAdditionalFees = async (req, res) => {
-    const schoolId = req.user.schoolId;
+const createAdditionalFee = async (req, res) => {
+    const { feeName, amount } = req.body;
+    const schoolId = req.user.schoolId; // Extract schoolId from the authenticated user's token
 
-    // Handle GET request to fetch additional fees
-    if (req.method === 'GET') {
-        try {
-            const additionalFees = await prisma.additionalFee.findMany({
-                where: { schoolId }
-            });
-            res.json({ additionalFees });
-        } catch (error) {
-            console.error('Error fetching additional fees:', error);
-            res.status(500).json({ error: 'Unable to retrieve additional fees.' });
+    /* Ensure the user has the appropriate role
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden. Admin role required.' });
+    }*/
+
+    try {
+        // Check if an additional fee with the same name already exists for the school
+        const existingFee = await prisma.additionalFee.findFirst({
+            where: { feeName, schoolId },
+        });
+
+        if (existingFee) {
+            return res.status(400).json({ error: `An additional fee named "${feeName}" already exists.` });
         }
+
+        // Create the new additional fee
+        const newFee = await prisma.additionalFee.create({
+            data: {
+                feeName,
+                amount: parseFloat(amount),
+                schoolId,
+            },
+        });
+
+        res.status(201).json({ message: 'Additional fee created successfully.', additionalFee: newFee });
+    } catch (error) {
+        console.error('Error creating additional fee:', error);
+        res.status(500).json({ error: 'Failed to create additional fee.' });
     }
+};
 
-    // Handle POST request to add or update an additional fee
-    else if (req.method === 'POST') {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+const getAdditionalFees = async (req, res) => {
+    const schoolId = req.user.schoolId;
+    console.log('Fetching additional fees for schoolId:', schoolId);
 
-        const { fee_name, amount } = req.body;
-
-        try {
-            // Check if the fee already exists for the current school
-            let additionalFee = await prisma.additionalFee.findFirst({
-                where: { feeName: fee_name, schoolId }
-            });
-
-            if (additionalFee) {
-                // Update existing fee amount
-                additionalFee = await prisma.additionalFee.update({
-                    where: { id: additionalFee.id },
-                    data: { amount: parseFloat(amount) }
-                });
-                res.json({ message: `Updated ${fee_name} to ${amount}`, additionalFee });
-            } else {
-                // Add a new additional fee
-                additionalFee = await prisma.additionalFee.create({
-                    data: {
-                        feeName: fee_name,
-                        amount: parseFloat(amount),
-                        schoolId
-                    }
-                });
-                res.json({ message: `Added ${fee_name} with amount ${amount}`, additionalFee });
-            }
-        } catch (error) {
-            console.error('Error managing additional fees:', error);
-            res.status(500).json({ error: 'Unable to manage additional fees.' });
-        }
+    try {
+        const additionalFees = await prisma.additionalFee.findMany({
+            where: { schoolId },
+        });
+        console.log('Fetched additional fees:', additionalFees);
+        res.json({ additionalFees });
+    } catch (error) {
+        console.error('Error fetching additional fees:', error);
+        res.status(500).json({ error: 'Failed to fetch additional fees.' });
     }
 };
 
@@ -379,8 +368,78 @@ const configureGrades = async (req, res) => {
     }
 };
 
+const getUsers = async (req, res) => {
+    try {
+        const users = await prisma.user.findMany({
+            where: {
+                schoolId: req.user.schoolId, // Filter users by the logged-in user's school
+            },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+                isActive: true, // Include the active status
+                schoolId: true,
+            },
+        });
+        res.json(users);
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        res.status(500).json({ error: 'Failed to fetch users.' });
+    }
+};
+
+const createUser = async (req, res) => {
+    const { username, email, role, password } = req.body;
+
+    // Restrict role creation if not admin
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden. Admin role required.' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await prisma.user.create({
+            data: {
+                username,
+                email,
+                role,
+                passwordHash: hashedPassword,
+                schoolId: req.user.schoolId, // Assign schoolId from the token
+            },
+        });
+        res.status(201).json({ message: 'User created successfully.', user: newUser });
+    } catch (err) {
+        console.error('Error creating user:', err);
+        res.status(500).json({ error: 'Failed to create user.' });
+    }
+};
+
+const toggleUserStatus = async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(req.params.id) },
+        });
+
+        // Ensure the user belongs to the same school and exists
+        if (!user || user.schoolId !== req.user.schoolId) {
+            return res.status(404).json({ error: 'User not found or unauthorized.' });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { isActive: !user.isActive }, // Toggle the active status
+        });
+
+        res.json({ isActive: updatedUser.isActive });
+    } catch (err) {
+        console.error('Error toggling user status:', err);
+        res.status(500).json({ error: 'Failed to toggle user status.' });
+    }
+};
 
 
 
-module.exports = {manageTerms, configureGrades, manageFeeStructure }; // Export functions for use in routes
+module.exports = {manageTerms, configureGrades, manageFeeStructure, createUser, getUsers, toggleUserStatus, createAdditionalFee, getAdditionalFees }; // Export functions for use in routes
 // In the code snippet above, we have defined route handlers for managing terms, fee structures, additional fees, migrating terms, and configuring grades. These handlers interact with the Prisma ORM to perform CRUD operations on the database and return appropriate responses to the client.

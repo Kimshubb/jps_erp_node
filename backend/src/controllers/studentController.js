@@ -373,10 +373,125 @@ const getStudentById = async (req, res) => {
     }
 };
 
+
+const updateStudentAdditionalFees = async (req, res) => {
+    const { studentId } = req.params;
+    const { additionalFeeId, action } = req.body; // `action` can be 'subscribe' or 'unsubscribe'
+
+    try {
+        // Validate student
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+        });
+
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found.' });
+        }
+
+        if (action === 'subscribe') {
+            // Subscribe the student to the additional fee
+            await prisma.student.update({
+                where: { id: studentId },
+                data: {
+                    additionalFees: {
+                        connect: { id: additionalFeeId },
+                    },
+                },
+            });
+            res.json({ message: 'Subscribed successfully.' });
+        } else if (action === 'unsubscribe') {
+            // Unsubscribe the student from the additional fee
+            await prisma.student.update({
+                where: { id: studentId },
+                data: {
+                    additionalFees: {
+                        disconnect: { id: additionalFeeId },
+                    },
+                },
+            });
+            res.json({ message: 'Unsubscribed successfully.' });
+        } else {
+            res.status(400).json({ error: 'Invalid action specified.' });
+        }
+    } catch (error) {
+        console.error('Error updating student additional fees:', error);
+        res.status(500).json({ error: 'Failed to update additional fees.' });
+    }
+};
+
+const getStudentAdditionalFees = async (req, res) => {
+    const { studentId } = req.params;
+
+    try {
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            include: {
+                additionalFees: true, // Fetch associated additional fees
+            },
+        });
+
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found.' });
+        }
+
+        res.json(student.additionalFees);
+    } catch (error) {
+        console.error('Error fetching student additional fees:', error);
+        res.status(500).json({ error: 'Failed to fetch additional fees.' });
+    }
+};
+
+const associateStudentWithFee = async (req, res) => {
+    const { studentId, additionalFeeId } = req.body;
+
+    try {
+        // Validate student and additional fee existence
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+        });
+
+        const additionalFee = await prisma.additionalFee.findUnique({
+            where: { id: additionalFeeId },
+        });
+
+        if (!student || !additionalFee) {
+            return res.status(404).json({ error: 'Student or Additional Fee not found.' });
+        }
+
+        // Check if the student belongs to the same school as the fee
+        if (student.schoolId !== additionalFee.schoolId) {
+            return res.status(400).json({
+                error: 'Student and additional fee do not belong to the same school.',
+            });
+        }
+
+        // Associate the student with the additional fee
+        await prisma.student.update({
+            where: { id: studentId },
+            data: {
+                additionalFees: {
+                    connect: { id: additionalFeeId },
+                },
+            },
+        });
+
+        res.json({ message: 'Student successfully associated with the additional fee.' });
+    } catch (error) {
+        console.error('Error associating student with fee:', error);
+        res.status(500).json({ error: 'Failed to associate student with the fee.' });
+    }
+};
+
+
+
+
 module.exports = { 
     addStudent,  
     getStudents,
     toggleStudentStatus,
     updateStudent,
-    getStudentById
+    getStudentById,
+    updateStudentAdditionalFees,
+    getStudentAdditionalFees,
+    associateStudentWithFee,
  };

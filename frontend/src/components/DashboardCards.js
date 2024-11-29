@@ -19,7 +19,7 @@ const DashboardCards = ({ data }) => {
       <Grid2 item xs={12} sm={6} md={3}>
         <Card>
           <CardContent>
-            <Typography variant="h5">{data.totalInactiveStudentsYear}</Typography>
+            <Typography variant="h5">{data.totalInactiveStudentsTerm}</Typography>
             <Typography color="textSecondary">Inactive Students</Typography>
             <PeopleIcon />
           </CardContent>
