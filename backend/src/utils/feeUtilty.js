@@ -192,4 +192,6 @@ class FeesUtility {
       };
     }
   }
+
+module.exports = FeesUtility;
   

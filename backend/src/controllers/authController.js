@@ -1,22 +1,22 @@
-// src/controllers/authController.js
+//src/controllers/authController.js
 const prisma = require('../utils/prismaClient');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const login = async (req, res) => {
-    console.log(req.body);
-    const { username, password } = req.body; // Expect username instead of email
+    const { username, password } = req.body;
 
     try {
         // Find user by username
         const user = await prisma.user.findUnique({
             where: { username },
+            select: { id: true, username: true, passwordHash: true, role: true, schoolId: true },
         });
 
         if (!user) {
-            // User not found, render login with an error
+            // User not found
             console.log(`User ${username} not found.`);
-            return res.render('login', { messages: [{ category: 'danger', text: 'Invalid credentials.' }] });
+            return res.status(401).json({ message: 'Invalid credentials.' });
         }
 
         // Compare provided password with stored hashed password
@@ -25,25 +25,23 @@ const login = async (req, res) => {
         if (!isPasswordMatch) {
             // Passwords do not match
             console.log(`User ${username} entered an incorrect password.`);
-            return res.render('login', { messages: [{ category: 'danger', text: 'Invalid credentials.' }] });
+            return res.status(401).json({ message: 'Invalid credentials.' });
         }
 
         // If login successful, generate JWT token
         const token = jwt.sign(
-            { userId: user.id, username: user.username, role: user.role },
+            { userId: user.id, username: user.username, role: user.role, schoolId: user.schoolId },
             process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
 
-        // Return token as JSON response
+        // Return token and user info as JSON response
         console.log(`User ${user.username} logged in successfully.`);
-        //return res.json({ message: 'Login successful', token });
-        res.redirect('/dashboard');
-
+        return res.json({ message: 'Login successful', token, user: { id: user.id, username: user.username, role: user.role, schoolId: user.schoolId } });
 
     } catch (error) {
         console.error(`Error logging in user ${username}:`, error);
-        res.render('login', { messages: [{ category: 'danger', text: 'Server error. Please try again.' }] });
+        return res.status(500).json({ message: 'Server error. Please try again.' });
     }
 };
 

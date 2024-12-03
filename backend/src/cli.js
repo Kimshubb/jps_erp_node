@@ -1,67 +1,165 @@
 require('dotenv').config();
-const yargs = require('yargs');
+const inquirer = require('inquirer');
 const bcrypt = require('bcrypt');
 const prisma = require('./utils/prismaClient');
 
-yargs.command({
-    command: 'create-admin',
-    describe: 'Create a new admin user',
-    builder: {
-        username: { describe: 'Admin username', type: 'string', demandOption: true },
-        email: { describe: 'Admin email', type: 'string', demandOption: true },
-        password: { describe: 'Admin password', type: 'string', demandOption: true },
-        schoolName: { describe: 'School name', type: 'string', demandOption: true },
-        schoolContacts: { describe: 'School contacts', type: 'string', demandOption: true },
-    },
-    handler: async (argv) => {
-        const { username, email, password, schoolName, schoolContacts } = argv;
+// Function to prompt the user for input
+const promptUser = async () => {
+    return inquirer.prompt([
+        {
+            type: 'input',
+            name: 'username',
+            message: 'Enter admin username:',
+            validate: input => input ? true : 'Username is required.',
+        },
+        {
+            type: 'input',
+            name: 'email',
+            message: 'Enter admin email:',
+            validate: input => /\S+@\S+\.\S+/.test(input) ? true : 'Please enter a valid email.',
+        },
+        {
+            type: 'password',
+            name: 'password',
+            message: 'Enter admin password:',
+            validate: input => input.length >= 8 ? true : 'Password should be at least 8 characters.',
+        },
+        {
+            type: 'input',
+            name: 'schoolName',
+            message: 'Enter school name:',
+            validate: input => input ? true : 'School name is required.',
+        },
+        {
+            type: 'input',
+            name: 'schoolContacts',
+            message: 'Enter school contact details:',
+            validate: input => input ? true : 'Contact details are required.',
+        },
+        {
+            type: 'input',
+            name: 'termName',
+            message: 'Enter the initial term name (e.g., Fall, Spring):',
+            validate: input => input ? true : 'Term name is required.',
+        },
+        {
+            type: 'number',
+            name: 'termYear',
+            message: 'Enter the initial term year:',
+            validate: input => Number.isInteger(input) && input > 2000 ? true : 'Please enter a valid year.',
+        },
+        {
+            type: 'input',
+            name: 'startDate',
+            message: 'Enter the start date of the term (YYYY-MM-DD):',
+            validate: input => !isNaN(Date.parse(input)) ? true : 'Please enter a valid date in YYYY-MM-DD format.',
+        },
+        {
+            type: 'input',
+            name: 'endDate',
+            message: 'Enter the end date of the term (YYYY-MM-DD):',
+            validate: input => !isNaN(Date.parse(input)) ? true : 'Please enter a valid date in YYYY-MM-DD format.',
+        },
+        {
+            type: 'confirm',
+            name: 'setCurrent',
+            message: 'Set this term as the current term?',
+            default: true,
+        }
+    ]);
+};
 
-        try {
-            // Check if user with provided email already exists
-            const existingUser = await prisma.user.findUnique({
-                where: { email },
-            });
-            if (existingUser) {
-                console.log('Error: User with this email already exists.');
-                return;
-            }
+// Function to create admin and set up initial data
+const createAdmin = async (answers) => {
+    const { username, email, password, schoolName, schoolContacts, termName, termYear, startDate, endDate, setCurrent } = answers;
 
-            // Check if the school already exists; if not, create it
-            let school = await prisma.school.findUnique({
-                where: { name: schoolName },
-            });
-            if (!school) {
-                school = await prisma.school.create({
-                    data: {
-                        name: schoolName,
-                        contacts: schoolContacts,
-                    },
-                });
-            }
+    try {
+        // Check if the user already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email },
+        });
+        if (existingUser) {
+            console.log('Error: User with this email already exists.');
+            return;
+        }
 
-            // Hash the password with bcrypt (10 salt rounds)
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            // Create the new admin user in the database
-            await prisma.user.create({
+        // Check if the school already exists; if not, create it
+        let school = await prisma.school.findUnique({
+            where: { name: schoolName },
+        });
+        if (!school) {
+            school = await prisma.school.create({
                 data: {
-                    username,
-                    email,
-                    passwordHash: hashedPassword,
-                    role: 'admin',
+                    name: schoolName,
+                    contacts: schoolContacts,
+                },
+            });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create the new admin user
+        const adminUser = await prisma.user.create({
+            data: {
+                username,
+                email,
+                passwordHash: hashedPassword,
+                role: 'admin',
+                schoolId: school.id,
+            },
+        });
+
+        console.log(`Admin user ${username} created successfully.`);
+
+        // Check if the term exists; if not, create it
+        let term = await prisma.term.findFirst({
+            where: {
+                name: termName,
+                year: termYear,
+                schoolId: school.id,
+            }
+        });
+
+        if (!term) {
+            term = await prisma.term.create({
+                data: {
+                    name: termName,
+                    year: termYear,
+                    startDate: new Date(startDate),
+                    endDate: new Date(endDate),
+                    current: setCurrent,
                     schoolId: school.id,
                 },
             });
-
-            console.log(`Admin user ${username} created successfully.`);
-        } catch (error) {
-            console.error(`Error creating admin: ${error.message}`);
-        } finally {
-            // Ensure that the Prisma client disconnects after completion
-            await prisma.$disconnect();
+            console.log(`Term ${termName} (${termYear}) created successfully.`);
+        } else {
+            console.log(`Term ${termName} (${termYear}) already exists.`);
         }
-    },
-});
 
-// Parse CLI arguments
-yargs.parse();
+        // Set term as current if specified
+        if (setCurrent) {
+            await prisma.term.updateMany({
+                where: {
+                    schoolId: school.id,
+                    id: { not: term.id },
+                },
+                data: { current: false },
+            });
+            await prisma.term.update({
+                where: { id: term.id },
+                data: { current: true },
+            });
+            console.log(`Term ${termName} (${termYear}) set as the current term.`);
+        }
+    } catch (error) {
+        console.error(`Error creating admin: ${error.message}`);
+    } finally {
+        await prisma.$disconnect();
+    }
+};
+
+// Run the prompt and create admin
+promptUser().then(createAdmin).catch(error => {
+    console.error(`Error: ${error.message}`);
+});

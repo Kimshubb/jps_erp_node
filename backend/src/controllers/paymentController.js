@@ -1,90 +1,380 @@
 const prisma = require('../utils/prismaClient');
-const { calculateBalance } = require('../utils/calculateBalance');
+//const  calculateBalance = require('../utils/calculateBalance');
+const { fetchBalanceData, calculateBalance } = require('../utils/calculateBalance');
 const { validationResult } = require('express-validator');
 const { DateTime } = require('luxon'); // For date handling
-const FeesUtility = require('./FeesUtility');
+//const FeesUtility = require('../utils/FeeUtility');
+const QRCode = require('qrcode');
+//const SchoolDataService = require('../utils/schoolDataService');
 
-// POST /api/payments/new_payment
+
 const newPayment = async (req, res) => {
-    const { student_id, amount, method, code } = req.body;
+    const { studentId, method, code } = req.body;
+    const amount = parseFloat(req.body.amount);
     const schoolId = req.user.schoolId;
 
-    // Validate form inputs (optional, as frontend should handle this primarily)
-    //const errors = validationResult(req);
-    //if (!errors.isEmpty()) {
-    //    return res.status(400).json({ errors: errors.array() });
-    //}
+    if (!studentId || !amount || !method) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
 
-    try {
-        // Check if there is a current term for the school
+    if (amount <= 0) {
+        return res.status(400).json({ error: 'Payment amount must be greater than 0' });
+    }
+
+    // Add validation for Mpesa payments
+    if ((method === 'Mpesa' || method === 'Bank') && !code) {
+        return res.status(400).json({ error: `${method} payments require a transaction code` });
+    }
+
+    const transaction = await prisma.$transaction(async (prisma) => {
+        // Check current term
         const currentTerm = await prisma.term.findFirst({
-            where: { current: true, schoolId }
+            where: { current: true, schoolId, endDate: { gte: new Date() } }
         });
+
         if (!currentTerm) {
-            throw new Error('No current term is set. Please set a current term before making payments.');
+            throw new Error('No active term found.');
         }
 
-        // Find the student by student_id and school_id
+        // Find student
         const student = await prisma.student.findUnique({
-            where: {
-                student_id_schoolId: { student_id, schoolId }
-            }
+            where: { id_schoolId: { id: studentId, schoolId } },
+            select: { id: true, fullName: true, cfBalance: true, active: true }
         });
+
         if (!student) {
-            throw new Error('Student not found');
+            throw new Error('Student not found.');
+        }
+        if (!student.active) {
+            throw new Error('Inactive student.');
         }
 
-        // Calculate balance and carry forward balance
-        const { balance, carryForwardBalance } = await calculateBalance(student.student_id);
+        // Calculate balance
+        //const currentBalance = await calculateBalance(student.id, currentTerm.id);
+        const balanceData = await fetchBalanceData(student.id, currentTerm.id);
+        const currentBalance = calculateBalance(balanceData);
 
-        // If payment method is Mpesa, check transaction code
-        if (method === 'Mpesa') {
-            const existingTransaction = await prisma.mpesaTransaction.findUnique({
-                where: { code }
-            });
+        // Handle Mpesa transaction if applicable
+        if (method === 'Mpesa' || method === 'Bank') {
+            const existingTransaction = await prisma.mpesaTransaction.findUnique({ where: { code } });
             if (existingTransaction) {
-                throw new Error('This Mpesa transaction code has already been used. Please enter a new code.');
+                throw new Error(`${method}Transaction code already used.`);
             }
 
-            // Create new MpesaTransaction
             await prisma.mpesaTransaction.create({
-                data: {
-                    code,
-                    amount,
-                    verified: false
-                }
+                data: { code, amount, verified: false /*schoolId*/ }
             });
         }
 
-        // Create a new payment record
-        const newPayment = await prisma.feePayment.create({
+        // Create payment
+        const payment = await prisma.feePayment.create({
             data: {
                 method,
                 amount,
-                code: method === 'Mpesa' || method === 'Bank' ? code : null,
-                balance: balance - amount,
+                code: (method === 'Mpesa' || method==='Bank') ? code : null,
+                balance: currentBalance - amount,
                 schoolId,
-                studentId: student.student_id,
-                pay_date: DateTime.now().toISODate(),
+                studentId: student.id,
+                payDate: new Date(),
                 termId: currentTerm.id
             }
         });
 
         // Update student's carry forward balance
         await prisma.student.update({
-            where: { student_id: student.student_id },
-            data: { cf_balance: Math.max(0, balance - amount) }
+            where: { id_schoolId: { id: student.id, schoolId } },
+            data: { cfBalance: Math.max(0, currentBalance - amount) }
         });
 
-        // Respond with the payment and a success message
-        res.json({ message: 'Payment added successfully', payment: newPayment });
+        return payment;
+    });
 
+    return res.status(200).json({
+        message: 'Payment processed successfully',
+        payment: transaction,
+        redirectUrl: `/receipt/${studentId}/${transaction.id}`
+    });
+};
+
+
+
+const printReceipt = async (req, res) => {
+    const { studentId, paymentId } = req.params;
+    const schoolId = req.user.schoolId; // Assume set by auth middleware
+
+    try {
+        // Fetch student, school, and current term details
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            include: { school: true }
+        });
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const school = await prisma.school.findUnique({ where: { id: schoolId } });
+        const currentTerm = await prisma.term.findFirst({
+            where: { current: true, schoolId }
+        });
+
+        if (!currentTerm) {
+            return res.status(400).json({ message: 'Current term not set for the school.' });
+        }
+
+        const { balance, currentTerm: termDetails } = await calculateBalance(studentId);
+
+        if (parseInt(paymentId) === 0) {
+            // Generate fee statement
+            const payments = await prisma.feePayment.findMany({
+                where: { studentId },
+                orderBy: { payDate: 'asc' }
+            });
+
+            const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+
+            return res.json({
+                type: 'fee_statement',
+                school: {
+                    name: school.name,
+                    contacts: school.contacts
+                },
+                student: {
+                    id: student.id,
+                    name: student.fullName
+                },
+                termDetails: termDetails,
+                payments,
+                totalPaid,
+                balance
+            });
+        } else {
+            // Generate receipt for a specific payment
+            const payment = await prisma.feePayment.findUnique({
+                where: { id: parseInt(paymentId) }
+            });
+
+            if (!payment) {
+                return res.status(404).json({ message: 'Payment not found.' });
+            }
+
+            const qrUrl = `${process.env.BASE_URL}/api/payments/student/${studentId}/receipt/0`;
+            const qrCode = await QRCode.toDataURL(qrUrl);
+
+            return res.json({
+                type: 'single_payment_receipt',
+                school: {
+                    name: school.name,
+                    contacts: school.contacts
+                },
+                student: {
+                    id: student.id,
+                    name: student.fullName
+                },
+                termDetails: termDetails,
+                payment,
+                qrCode,
+                balance
+            });
+        }
     } catch (error) {
-        console.error('Error processing payment:', error);
-        res.status(500).json({ message: error.message || 'An unexpected error occurred.' });
+        console.error('Error generating receipt:', error);
+        return res.status(500).json({ message: 'An error occurred while generating the receipt.' });
     }
 };
 
+const studentPayments = async (req, res) => {
+    const gradeFilter = req.query.grade || 'all';
+    const streamFilter = req.query.stream || 'all';
+    const termFilter = req.query.term || 'current'; // Default to current term
+    const page = parseInt(req.query.page) || 1;
+    const perPage = 15;
+    const schoolId = req.user.schoolId;
+
+    try {
+        let termId;
+
+        if (termFilter === 'current') {
+            const currentTerm = await prisma.term.findFirst({ where: { current: true, schoolId } });
+            if (!currentTerm) {
+                return res.status(400).json({ message: 'No active term found for this school.' });
+            }
+            termId = currentTerm.id;
+        } else {
+            termId = parseInt(termFilter);
+        }
+
+        const studentFilters = {
+            schoolId,
+            active: true,
+            ...(gradeFilter !== 'all' && { gradeId: parseInt(gradeFilter) }),
+            ...(streamFilter !== 'all' && { streamId: parseInt(streamFilter) })
+        };
+
+        const students = await prisma.student.findMany({
+            where: studentFilters,
+            skip: (page - 1) * perPage,
+            take: perPage,
+            include: { grade: true, stream: true }
+        });
+
+        const totalStudents = await prisma.student.count({ where: studentFilters });
+
+        const studentPaymentDetails = await Promise.all(
+            students.map(async (student) => {
+                const balanceData = await fetchBalanceData(student.id, termId);
+                const balance = calculateBalance(balanceData);
+
+                return {
+                    id: student.id,
+                    fullName: student.fullName,
+                    grade: student.grade.name,
+                    gradeId: student.grade.id, // Ensure gradeId is included
+                    stream: student.stream?.name || 'N/A',
+                    totalPaid: balanceData.paidAmount,
+                    balance
+                };
+            })
+        );
+
+        const validGradeIds = studentPaymentDetails
+            .map((s) => s.gradeId)
+            .filter((id) => id !== undefined); // Filter out undefined values
+
+        const streams = await prisma.stream.findMany({
+            where: {
+                gradeId: { in: validGradeIds }
+            }
+        });
+
+        res.json({
+            students: studentPaymentDetails,
+            filters: {
+                grades: await prisma.grade.findMany({ where: { schoolId } }),
+                terms: await prisma.term.findMany({ where: { schoolId } }),
+                streams
+            },
+            pagination: {
+                page,
+                perPage,
+                total: totalStudents,
+                totalPages: Math.ceil(totalStudents / perPage)
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching students payments:', error);
+        res.status(500).json({ message: 'Failed to fetch students payments.' });
+    }
+};
+
+const getStudentsWithFilters = async (req, res) => {
+    const { schoolId } = req.user.schoolId; // Assumes schoolId is extracted from the authenticated user.
+    const { page = 1, limit = 10, gradeId, streamId, feeId } = req.query; // Pagination and filters
+
+    try {
+        const pageNumber = parseInt(page, 10);
+        const pageSize = parseInt(limit, 10);
+        const skip = (pageNumber - 1) * pageSize;
+
+        // Fetch grades for the school
+        const grades = await prisma.grade.findMany({
+            where: { schoolId },
+            select: {
+                id: true,
+                name: true,
+            },
+            orderBy: { name: 'asc' },
+        });
+
+        // Get streams for the valid grades
+        const validGradeIds = grades.map((grade) => grade.id);
+        const streams = await prisma.stream.findMany({
+            where: {
+                gradeId: { in: validGradeIds },
+            },
+            select: {
+                id: true,
+                name: true,
+                gradeId: true,
+            },
+        });
+        // Fetch additional fees for the school
+        const additionalFees = await prisma.additionalFee.findMany({
+            where: { schoolId },
+            select: {
+                id: true,
+                feeName: true,
+                amount: true,
+            },
+        });
+
+        // Build filters
+        const filters = {
+            schoolId,
+        };
+        if (gradeId) {
+            filters.gradeId = parseInt(gradeId, 10);
+        }
+        if (streamId) {
+            filters.streamId = parseInt(streamId, 10);
+        }
+        if (feeId) {
+            filters.additionalFees = {
+                some: { id: parseInt(feeId, 10) },
+            };
+        }
+
+        // Fetch students with pagination and filters
+        const [students, totalStudents] = await Promise.all([
+            prisma.student.findMany({
+                where: filters,
+                skip,
+                take: pageSize,
+                include: {
+                    grade: true,
+                    stream: true,
+                    additionalFees: true, // Include additional fees to count them
+                },
+            }),
+            prisma.student.count({
+                where: filters,
+            }),
+        ]);
+
+        // Add additional fees count to each student
+        const studentsWithFeesCount = students.map((student) => ({
+            ...student,
+            additionalFeesCount: student.additionalFees.length,
+        }));
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalStudents / pageSize);
+
+        // Respond with data
+        res.json({
+            metadata: {
+                page: pageNumber,
+                limit: pageSize,
+                totalStudents,
+                totalPages,
+            },
+            filters: {
+                grades,
+                streams,
+                additionalFees,
+            },
+            students: studentsWithFeesCount,
+        });
+    } catch (error) {
+        console.error('Error fetching students with filters:', error);
+        res.status(500).json({ error: 'Failed to fetch students.' });
+    }
+};
+
+/*
+// Fetches student payments with balance and carry-forward balance for the current term.
+// GET /api/payments/student_payments
+//
 const studentPayments = async (req, res) => {
     const gradeFilter = req.query.grade || 'all';
     const streamFilter = req.query.stream || 'all';
@@ -188,10 +478,10 @@ const studentPayments = async (req, res) => {
     }
 };
 
-/**
+
  * Generates a receipt or fee statement for a student.
  * GET /api/payments/student/:studentId/receipt/:paymentId
- */
+ 
 const printReceipt = async (req, res) => {
     const { studentId, paymentId } = req.params;
     const schoolId = req.user.schoolId;  // Assume this is set by an auth middleware
@@ -270,40 +560,28 @@ const printReceipt = async (req, res) => {
     }
 };
 
-/**
+
  * Fetches all recent payments for the current school.
  * GET /api/payments/recent_payments
- */
-const recentPayments = async (req, res) => {
-    const schoolId = req.user.schoolId; // Assuming req.user is set by an authentication middleware
+ 
+const viewAllPayments = async (req, res) => {
+    const schoolId = req.user.schoolId;
 
     try {
-        // Fetch all recent payments for the school
-        const recentPayments = await prisma.payment.findMany({
-            where: { schoolId },
-            orderBy: { date: 'desc' },
-            include: {
-                student: { select: { full_name: true } },
-                term: { select: { name: true } }
-            }
-        });
+        const schoolDataService = new SchoolDataService(schoolId);
+        const allPayments = await schoolDataService.getRecentPayments(); // Call without limit to fetch all
 
-        // Log for debugging (optional)
-        console.log("All Recent Payments:", recentPayments);
-
-        // Return recent payments as JSON
-        res.json({ recentPayments });
-
+        res.json({ payments: allPayments });
     } catch (error) {
-        console.error("Error fetching all recent payments:", error);
-        res.status(500).json({ message: 'An error occurred while fetching recent payments.' });
+        console.error('Error fetching all payments:', error);
+        res.status(500).json({ message: 'An error occurred while fetching all payments.' });
     }
-};
+}
 
-/**
+
  * Generates fee reports for the school, including payment and term comparisons.
  * GET /api/payments/fee_reports
- */
+ 
 const feeReports = async (req, res) => {
     const schoolId = req.user.schoolId; // Assume req.user is populated by authentication middleware
   
@@ -366,10 +644,10 @@ const feeReports = async (req, res) => {
     }
 };
 
-/**
+
  * Searches student payments based on query and returns results with payment details.
  * GET /api/payments/search_student_payments?q=searchTerm
- */
+ 
 const searchStudentPayments = async (req, res) => {
     const query = req.query.q || '';
     const schoolId = req.user.schoolId; // Assume req.user is populated by authentication middleware
@@ -440,11 +718,11 @@ const searchStudentPayments = async (req, res) => {
     }
 };
 
-/**
+
  * Adds an additional fee to a student.
  * GET /api/payments/student/:studentId/add_fee - Fetch available additional fees
  * POST /api/payments/student/:studentId/add_fee - Associate additional fee with student
- */
+ 
 const addAdditionalFee = async (req, res) => {
     const { studentId } = req.params;
     const schoolId = req.user.schoolId; // Assuming req.user is populated by authentication middleware
@@ -506,6 +784,6 @@ const addAdditionalFee = async (req, res) => {
         console.error('Error adding additional fee:', error);
         res.status(500).json({ message: 'An error occurred while adding the additional fee.' });
     }
-};
+};*/
 
-module.exports = { newPayment, studentPayments, printReceipt, recentPayments, feeReports, searchStudentPayments, addAdditionalFee };
+module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments/* viewAllPayments, feeReports, searchStudentPayments, addAdditionalFee*/ };
