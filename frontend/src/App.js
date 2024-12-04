@@ -1,22 +1,3 @@
-<<<<<<< HEAD
-import React from 'react';
-import AppTheme from './shared-theme/AppTheme';
-import Dashboard from './pages/Dashboard';
-import AppNavbar from './components/AppNavbar';
-import CssBaseline from '@mui/material/CssBaseline';
-
-function App() {
-  return (
-    <div className="App">
-      <AppTheme>
-        <CssBaseline enableColorScheme/>
-          <AppNavbar />
-          <Dashboard  />
-      </AppTheme>
-    </div>
-  );
-}
-=======
 import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -234,6 +215,5 @@ const App = () => {
         </Router>
     );
 };
->>>>>>> b2890095ee1945999db6e22a77fb718e1ea6136d
 
 export default App;
