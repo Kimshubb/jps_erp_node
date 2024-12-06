@@ -6,6 +6,9 @@ import axiosInstance from '../utils/axiosInstance';
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
+  const [schoolName, setSchoolName] = useState('');
+  const [user, setUser] = useState(null);
+  const [currentTerm, setCurrentTerm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -17,7 +20,13 @@ const Dashboard = () => {
 
         const response = await axiosInstance.get('/api/dashboard');
         console.log('Dashboard data received:', response.data);
-        setDashboardData(response.data.data); // Store only relevant dashboard data
+        //setDashboardData(response.data.data);
+        const { schoolName, user, currentTerm, data } = response.data;
+
+        setSchoolName(schoolName);
+        setUser(user);
+        setCurrentTerm(currentTerm);
+        setDashboardData(data);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         setError(error.response?.data?.message || 'Failed to load dashboard data');
