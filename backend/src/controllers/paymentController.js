@@ -349,6 +349,10 @@ const getStudentsWithFilters = async (req, res) => {
 
         // Calculate total pages
         const totalPages = Math.ceil(totalStudents / pageSize);
+        console.log('Total students:', totalStudents);
+        console.log('Total pages:', totalPages);
+        console.log('Students:', studentsWithFeesCount);
+        console.log('Filters:', filters);
 
         // Respond with data
         res.json({

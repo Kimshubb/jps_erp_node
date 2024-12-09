@@ -64,10 +64,10 @@ const ViewAddfees = () => {
     try {
       setLoading(true);
       setError(null);
-
+  
       const { page } = pagination;
       const { gradeId, streamId, feeId } = filterValues;
-
+  
       const response = await axiosInstance.get('/api/students/view-students', {
         params: {
           page,
@@ -77,13 +77,15 @@ const ViewAddfees = () => {
           feeId: feeId || undefined,
         },
       });
-
+  
       const { students, metadata } = response.data;
+  
       setStudents(students);
+  
       setPagination((prev) => ({
         ...prev,
-        totalStudents: metadata.totalStudents,
-        totalPages: metadata.totalPages,
+        totalStudents: metadata?.totalStudents || 0, // Safe access
+        totalPages: metadata?.totalPages || 1,       // Safe access
       }));
     } catch (error) {
       console.error('Error fetching students:', error);
