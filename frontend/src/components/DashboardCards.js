@@ -29,7 +29,7 @@ const DashboardCards = ({ data }) => {
         <Card>
           <CardContent>
             <Typography variant="h5">{data.totalPaidViaCashToday}</Typography>
-            <Typography color="textSecondary">Cash Today</Typography>
+            <Typography color="textSecondary">Cash Total Today</Typography>
             <MonetizationOnIcon />
           </CardContent>
         </Card>
@@ -38,7 +38,7 @@ const DashboardCards = ({ data }) => {
         <Card>
           <CardContent>
             <Typography variant="h5">{data.totalBankedToday}</Typography>
-            <Typography color="textSecondary">Bank Today</Typography>
+            <Typography color="textSecondary">Bank Total Today</Typography>
             <MonetizationOnIcon />
           </CardContent>
         </Card>

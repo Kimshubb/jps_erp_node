@@ -167,7 +167,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between', 
-          paddingX: 2 
+          paddingX: 2,
         }}
       >
         <Typography 
