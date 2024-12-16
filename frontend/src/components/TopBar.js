@@ -1,6 +1,5 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Stack } from '@mui/material';
-import { Brightness4 as ThemeIcon } from '@mui/icons-material';
 
 const Topbar = ({ user, currentTerm }) => {
   return (
