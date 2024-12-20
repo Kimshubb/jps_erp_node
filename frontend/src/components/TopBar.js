@@ -1,6 +1,5 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, IconButton, Stack } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import { AppBar, Toolbar, Typography, Stack } from '@mui/material';
 
 const Topbar = ({ user, currentTerm }) => {
   return (

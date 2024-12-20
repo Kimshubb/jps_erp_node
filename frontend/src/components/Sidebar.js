@@ -95,7 +95,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
       sx: {
         ...(!isChild && {
           borderRadius: 1,
-          margin: '4px 8px',
+          margin: '4px 1px',
           '&:hover': {
             backgroundColor: 'rgba(0, 0, 0, 0.04)',
           },
@@ -104,7 +104,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
           backgroundColor: 'rgba(0, 0, 0, 0.08)',
           fontWeight: 'bold',
         }),
-        color: 'text.primary',
+        color: 'theme.palette.primary.main',
         transition: 'all 0.3s ease',
       },
       onClick: () => {
@@ -159,9 +159,9 @@ function Sidebar({ schoolName, onToggleTheme }) {
     <Box
       sx={{
         width: 250,
-        bgcolor: 'background.paper',
-        boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)',
-        color: 'text.primary',
+        bgcolor: 'theme.palette.primary.main',
+        boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.1)',
+        color: 'theme.palette.primary.contrastText',
         minHeight: '100vh',
         paddingTop: 2,
         display: 'flex',
@@ -176,7 +176,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between', 
-          paddingX: 2 
+          paddingX: 2,
         }}
       >
         <Typography 
@@ -201,7 +201,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
           </IconButton>
         </Tooltip>
       </Box>
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 2, bgcolor: theme.palette.primary.contrastText}} />
 
       {/* Menu Items */}
       <List component="nav" sx={{ flexGrow: 1 }}>
