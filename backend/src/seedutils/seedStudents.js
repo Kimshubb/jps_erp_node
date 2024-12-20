@@ -35,7 +35,8 @@ const generateDateOfBirth = (gradeName) => {
         'Grade 5': 10,
         'Grade 6': 11,
         'Grade 7': 12,
-        'Grade 8': 13
+        'Grade 8': 13,
+        'Grade 9': 14
     };
 
     // Ensure the grade exists in our mapping

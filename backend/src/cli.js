@@ -2,6 +2,8 @@ require('dotenv').config();
 const inquirer = require('inquirer');
 const bcrypt = require('bcrypt');
 const prisma = require('./utils/prismaClient');
+const {populateInitialGrades} = require('./seedutils/seedgrades');
+const {seedSubjects} = require('./seedutils/seedSubjects');
 
 // Function to prompt the user for input
 const promptUser = async () => {
@@ -70,6 +72,7 @@ const promptUser = async () => {
 };
 
 // Function to create admin and set up initial data
+// Modified createAdmin function to include grade and subject seeding
 const createAdmin = async (answers) => {
     const { username, email, password, schoolName, schoolContacts, termName, termYear, startDate, endDate, setCurrent } = answers;
 
@@ -112,6 +115,20 @@ const createAdmin = async (answers) => {
 
         console.log(`Admin user ${username} created successfully.`);
 
+        // Seed initial grades for the school
+        const gradesSeeded = await populateInitialGrades(school.id);
+        if (!gradesSeeded) {
+            console.error('Failed to seed initial grades.');
+            return;
+        }
+
+        // Seed subjects for the school
+        const subjectsSeeded = await seedSubjects(prisma, school.id);
+        if (!subjectsSeeded) {
+            console.error('Failed to seed subjects.');
+            return;
+        }
+
         // Check if the term exists; if not, create it
         let term = await prisma.term.findFirst({
             where: {
@@ -152,14 +169,17 @@ const createAdmin = async (answers) => {
             });
             console.log(`Term ${termName} (${termYear}) set as the current term.`);
         }
+
+        console.log('School setup completed successfully!');
     } catch (error) {
         console.error(`Error creating admin: ${error.message}`);
     } finally {
         await prisma.$disconnect();
     }
 };
-
 // Run the prompt and create admin
 promptUser().then(createAdmin).catch(error => {
     console.error(`Error: ${error.message}`);
 });
+
+module.exports = { promptUser, createAdmin, seedSubjects };

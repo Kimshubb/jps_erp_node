@@ -18,6 +18,8 @@ import ManageUsers from './pages/ManageUsers';
 import AdditionalFeesPage from './pages/AdditionalFees';
 import AdditionalFees from './pages/AddFee';
 import ViewAddfees from './pages/ViewAddfees';
+import AssignSubjects from './pages/Assignsubjects';
+
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
@@ -207,6 +209,16 @@ const App = () => {
                     element={
                         <ProtectedRoute>
                                 <PrintReceipt />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teachers/assign-subjects"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <AssignSubjects/>
+                            </MainLayout>
                         </ProtectedRoute>
                     }
                 />

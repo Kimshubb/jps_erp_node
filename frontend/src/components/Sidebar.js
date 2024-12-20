@@ -27,7 +27,8 @@ import {
   Add as AddIcon,
   BarChart as ReportsIcon,
   Tune as ConfigureIcon,
-  Brightness4 as ThemeIcon
+  Brightness4 as ThemeIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -64,6 +65,14 @@ function Sidebar({ schoolName, onToggleTheme }) {
         { label: 'New Payment', icon: <AddIcon />, path: '/payments/new' },
         { label: 'Add Fee Lists', icon: <AddIcon />, path: '/payments/view-addfees' },
         { label: 'Fees Reports', icon: <ReportsIcon />, path: '/payments/reports' },
+      ],
+    },
+    {
+      label: 'Teachers',
+      icon: <PeopleIcon />,
+      children: [
+        { label: 'Assign Subjects', icon: <ViewListIcon />, path: '/teachers/assign-subjects' },
+        { label: 'Add Teacher', icon: <AddIcon />, path: '/teachers/add' },
       ],
     },
     {

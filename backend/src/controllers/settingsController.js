@@ -407,11 +407,24 @@ const createUser = async (req, res) => {
                 role,
                 passwordHash: hashedPassword,
                 schoolId: req.user.schoolId, // Assign schoolId from the token
+                ...(role === 'teacher' && { 
+                    teacherProfile: {
+                         create: {
+                            schoolId: req.user.schoolId
+                         }
+                    } 
+                })
             },
+            include: {
+                teacherProfile: true
+            }
         });
-        res.status(201).json({ message: 'User created successfully.', user: newUser });
+        res.status(201).json({ message: 'User created successfully.', user: {...newUser, passwordHash: undefined} });
     } catch (err) {
         console.error('Error creating user:', err);
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'User with this email already exists.' });
+        }
         res.status(500).json({ error: 'Failed to create user.' });
     }
 };

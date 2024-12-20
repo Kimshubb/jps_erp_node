@@ -1,4 +1,5 @@
 // src/seedutils/seedInitialGrades.js
+// this file contains a function that populates the grades table with initial grades for a school. The function takes a school ID as an argument and creates the following grades if they do not already exist: Playgroup, PP1, PP2, Grade 1, Grade 2, Grade 3, Grade 4, Grade 5, Grade 6, Grade 7, Grade 8.
 const prisma = require('../utils/prismaClient');
 
 const populateInitialGrades = async (schoolId) => {
@@ -6,7 +7,7 @@ const populateInitialGrades = async (schoolId) => {
         'Playgroup', 'PP1', 'PP2', 
         'Grade 1', 'Grade 2', 'Grade 3', 
         'Grade 4', 'Grade 5', 'Grade 6', 
-        'Grade 7', 'Grade 8'
+        'Grade 7', 'Grade 8', 'Grade 9'
     ];
 
     try {

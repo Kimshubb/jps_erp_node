@@ -13,6 +13,8 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const imageRoutes = require('./routes/imageRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
 const blogRoutes = require('./routes/blogRoutes');
+const teacherRoutes = require('./routes/teacherRoutes');
+const leadsRoutes = require('./routes/leadsRoutes'); 
 
 // Middleware Imports
 const isAuthenticated = require('./middleware/authMiddleware');
@@ -45,9 +47,11 @@ app.use('/api', isAuthenticated, mainRoutes); // Protected main routes
 app.use('/api/students', studentRoutes); // Protected student routes
 app.use('/settings', isAuthenticated, settingsRoutes); // Protected settings routes
 app.use('/api/payments', isAuthenticated, paymentRoutes); // Protected payment routes
+app.use('/api/teachers', isAuthenticated, teacherRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/blog', blogRoutes)
+app.use('/api/leads', leadsRoutes) 
 
 
 
