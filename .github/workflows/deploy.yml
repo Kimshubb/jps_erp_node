@@ -1,0 +1,51 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main  # Trigger on push to the 'main' branch (adjust as needed)
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '23'  # Use the Node.js version of your choice
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pnpm install  # Or 'pnpm install' if you're using pnpm
+          cd ../frontend
+          pnpm install  # Or 'pnpm install'
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm run build
+
+      - name: Deploy to Server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # Add private SSH key as GitHub secret
+          HOST: 46.101.154.184
+          USER: root
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -i private_key.pem $USER@$HOST << 'EOF'
+            cd /var/www/jps_erp_node
+            git pull origin main
+            cd backend && pnpm install && pm2 restart all
+            cd ../frontend && pnpm run build
+            sudo systemctl restart nginx  # Restart Nginx if necessary
+          EOF
+
