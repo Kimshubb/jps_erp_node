@@ -22,16 +22,15 @@ jobs:
           node-version: '23'
           cache: 'pnpm'
 
-      # Install pnpm
       - name: Install pnpm
         run: npm install -g pnpm
 
       - name: Install dependencies
         run: |
           cd backend
-          pnpm install  # Or 'pnpm install' if you're using pnpm
+          pnpm install
           cd ../frontend
-          pnpm install  # Or 'pnpm install'
+          pnpm install
 
       - name: Build frontend
         run: |
@@ -53,4 +52,3 @@ jobs:
             cd ../frontend && pnpm run build
             sudo systemctl restart nginx  # Restart Nginx if necessary
           EOF
-
