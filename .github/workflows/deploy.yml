@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,6 +36,7 @@ jobs:
         run: |
           cd frontend
           CI=false npm run build
+          ls -la build # Verify that the build folder exists
 
       # Deploy to Server
       - name: Deploy to Server
@@ -56,14 +57,21 @@ jobs:
           
           # SSH into the server and perform deployment tasks
           ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
-            # Navigate to your project directory and perform updates
+            # Navigate to your project directory and pull the latest code
             cd /var/www/jps_erp_node
             git pull origin main
             
-            # Install dependencies and restart backend services
-            cd backend && npm install && pm2 restart all
-            
-            # Build frontend and restart Nginx
-            cd ../frontend && npm run build
+            # Install backend dependencies and restart services
+            cd backend
+            npm install
+            pm2 restart all
+          EOF
+          
+          # Transfer the frontend build folder to the server
+          scp -i private_key.pem -r frontend/build $USER@$HOST:/var/www/jps_erp_node/frontend
+          
+          # Restart Nginx
+          ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             sudo systemctl restart nginx
           EOF
+
