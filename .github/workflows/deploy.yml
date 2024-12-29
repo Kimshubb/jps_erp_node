@@ -44,14 +44,26 @@ jobs:
           HOST: 46.101.154.184
           USER: root
         run: |
+          # Create the private key file
           echo "$SSH_PRIVATE_KEY" > private_key.pem
+          
+          # Secure the private key file
           chmod 600 private_key.pem
+          
+          # Setup SSH known hosts to avoid SSH verification prompts
           mkdir -p ~/.ssh
           ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+          
+          # SSH into the server and perform deployment tasks
           ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
+            # Navigate to your project directory and perform updates
             cd /var/www/jps_erp_node
             git pull origin main
+            
+            # Install dependencies and restart backend services
             cd backend && npm install && pm2 restart all
+            
+            # Build frontend and restart Nginx
             cd ../frontend && npm run build
             sudo systemctl restart nginx
           EOF
