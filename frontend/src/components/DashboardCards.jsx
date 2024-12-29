@@ -1,13 +1,13 @@
 // src/components/DashboardCards.js
 import React from 'react';
-import { Card, CardContent, Typography, Grid2 } from '@mui/material';
+import { Card, CardContent, Typography, Grid } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 
 const DashboardCards = ({ data }) => {
   return (
-    <Grid2 container spacing={2} sx={{ mt: 4 }}>
-      <Grid2 item xs={12} sm={6} md={3}>
+    <Grid container spacing={2} sx={{ mt: 4 }}>
+      <Grid item xs={12} sm={6} md={3}>
         <Card>
           <CardContent>
             <Typography variant="h5">{data.totalActiveStudents}</Typography>
@@ -15,8 +15,8 @@ const DashboardCards = ({ data }) => {
             <PeopleIcon />
           </CardContent>
         </Card>
-      </Grid2>
-      <Grid2 item xs={12} sm={6} md={3}>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
         <Card>
           <CardContent>
             <Typography variant="h5">{data.totalInactiveStudentsTerm}</Typography>
@@ -24,8 +24,8 @@ const DashboardCards = ({ data }) => {
             <PeopleIcon />
           </CardContent>
         </Card>
-      </Grid2>
-      <Grid2 item xs={12} sm={6} md={3}>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
         <Card>
           <CardContent>
             <Typography variant="h5">{data.totalPaidViaCashToday}</Typography>
@@ -33,8 +33,8 @@ const DashboardCards = ({ data }) => {
             <MonetizationOnIcon />
           </CardContent>
         </Card>
-      </Grid2>
-      <Grid2 item xs={12} sm={6} md={3}>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
         <Card>
           <CardContent>
             <Typography variant="h5">{data.totalBankedToday}</Typography>
@@ -42,8 +42,8 @@ const DashboardCards = ({ data }) => {
             <MonetizationOnIcon />
           </CardContent>
         </Card>
-      </Grid2>
-    </Grid2>
+      </Grid>
+    </Grid>
   );
 };
 
