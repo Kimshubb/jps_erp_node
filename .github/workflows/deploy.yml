@@ -22,27 +22,27 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'  # Use a valid Node.js version
-          cache: 'pnpm'
+            #cache: 'pnpm'
 
       # Install pnpm if not cached
-      - name: Ensure pnpm is installed
-        run: |
-          if ! command -v pnpm; then npm install -g pnpm; fi
-        shell: bash
+      #- name: Ensure pnpm is installed
+      # run: |
+      #   if ! command -v pnpm; then npm install -g pnpm; fi
+      # shell: bash
 
       # Install Dependencies
       - name: Install Dependencies
         run: |
           cd backend
-          pnpm install
+          npm install
           cd ../frontend
-          pnpm install
+          npm install
 
       # Build Frontend
       - name: Build Frontend
         run: |
           cd frontend
-          pnpm run build
+          npm run build
 
       # Deploy to Server
       - name: Deploy to Server
@@ -56,8 +56,8 @@ jobs:
           ssh -i private_key.pem $USER@$HOST << 'EOF'
             cd /var/www/jps_erp_node
             git pull origin main
-            cd backend && pnpm install && pm2 restart all
-            cd ../frontend && pnpm run build
+            cd backend && npm install && pm2 restart all
+            cd ../frontend && npm run build
             sudo systemctl restart nginx
           EOF
 
