@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Container, TextField, Typography, Grid2 } from '@mui/material';
+import { Box, Button, Container, TextField, Typography, Grid } from '@mui/material';
 import axiosInstance from '../utils/axiosInstance';
 import { useForm, Controller } from 'react-hook-form';
 
@@ -59,8 +59,8 @@ const Terms = () => {
                 Manage Terms
             </Typography>
             <Box component="form" onSubmit={handleSubmit(onSubmit)} mb={4}>
-                <Grid2 container spacing={2}>
-                    <Grid2 item xs={12} sm={6}>
+                <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
                         <Controller
                             name="name"
                             control={control}
@@ -74,8 +74,8 @@ const Terms = () => {
                                 />
                             )}
                         />
-                    </Grid2>
-                    <Grid2 item xs={12} sm={6}>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
                         <Controller
                             name="year"
                             control={control}
@@ -90,8 +90,8 @@ const Terms = () => {
                                 />
                             )}
                         />
-                    </Grid2>
-                    <Grid2 item xs={12} sm={6}>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
                         <Controller
                             name="startDate"
                             control={control}
@@ -107,8 +107,8 @@ const Terms = () => {
                                 />
                             )}
                         />
-                    </Grid2>
-                    <Grid2 item xs={12} sm={6}>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
                         <Controller
                             name="endDate"
                             control={control}
@@ -124,8 +124,8 @@ const Terms = () => {
                                 />
                             )}
                         />
-                    </Grid2>
-                </Grid2>
+                    </Grid>
+                </Grid>
                 <Button type="submit" variant="contained" sx={{ mt: 2 }}>
                     Save Term
                 </Button>
