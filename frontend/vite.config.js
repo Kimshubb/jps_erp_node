@@ -1,14 +1,11 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  root: './src', // Ensure this points to the correct directory
   build: {
-    outDir: '../dist', // Output directory
-    rollupOptions: {
-      input: '/index.html', // Entry file
-    },
-  },
-});
+    outDir: 'dist',
+    emptyOutDir: true,
+  }
+})
 
