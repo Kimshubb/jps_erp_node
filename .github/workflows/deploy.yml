@@ -21,14 +21,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Use a valid Node.js version
-            #cache: 'pnpm'
-
-      # Install pnpm if not cached
-      #- name: Ensure pnpm is installed
-      # run: |
-      #   if ! command -v pnpm; then npm install -g pnpm; fi
-      # shell: bash
+          node-version: '20'
 
       # Install Dependencies
       - name: Install Dependencies
@@ -53,11 +46,12 @@ jobs:
         run: |
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
-          ssh -i private_key.pem $USER@$HOST << 'EOF'
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+          ssh -i private_key.pem -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             cd /var/www/jps_erp_node
             git pull origin main
             cd backend && npm install && pm2 restart all
             cd ../frontend && npm run build
             sudo systemctl restart nginx
           EOF
-
