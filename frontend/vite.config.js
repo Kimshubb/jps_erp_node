@@ -3,11 +3,11 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  root: './', // Ensure this points to the correct directory
+  root: './src', // Ensure this points to the correct directory
   build: {
-    outDir: 'dist', // Output directory
+    outDir: '../dist', // Output directory
     rollupOptions: {
-      input: 'index.html', // Entry file
+      input: '/src/index.html', // Entry file
     },
   },
 });
