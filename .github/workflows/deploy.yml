@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main  # Trigger on push to the 'main' branch (adjust as needed)
+      - main
   pull_request:
     branches:
       - main
@@ -13,33 +13,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
+      # Setup Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '23'
+          node-version: '20'  # Use a valid Node.js version
           cache: 'pnpm'
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      # Install pnpm if not cached
+      - name: Ensure pnpm is installed
+        run: |
+          if ! command -v pnpm; then npm install -g pnpm; fi
+        shell: bash
 
-      - name: Install dependencies
+      # Install Dependencies
+      - name: Install Dependencies
         run: |
           cd backend
           pnpm install
           cd ../frontend
           pnpm install
 
-      - name: Build frontend
+      # Build Frontend
+      - name: Build Frontend
         run: |
           cd frontend
           pnpm run build
 
+      # Deploy to Server
       - name: Deploy to Server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}  # Add private SSH key as GitHub secret
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           HOST: 46.101.154.184
           USER: root
         run: |
@@ -50,5 +58,6 @@ jobs:
             git pull origin main
             cd backend && pnpm install && pm2 restart all
             cd ../frontend && pnpm run build
-            sudo systemctl restart nginx  # Restart Nginx if necessary
+            sudo systemctl restart nginx
           EOF
+
