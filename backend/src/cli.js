@@ -2,7 +2,7 @@ require('dotenv').config();
 const inquirer = require('inquirer');
 const bcrypt = require('bcrypt');
 const prisma = require('./utils/prismaClient');
-const {populateInitialGrades} = require('./seedutils/seedgrades');
+const {populateInitialGrades} = require('./seedutils/seedGrades');
 const {seedSubjects} = require('./seedutils/seedSubjects');
 
 // Function to prompt the user for input
