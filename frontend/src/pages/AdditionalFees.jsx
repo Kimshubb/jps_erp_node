@@ -11,7 +11,7 @@ const AdditionalFeesPage = () => {
     // Fetch existing fees for the user's school
     const fetchFees = async () => {
         try {
-            const response = await axiosInstance.get('/settings/additional-fees');
+            const response = await axiosInstance.get('/api/settings/additional-fees');
             setFees(response.data.additionalFees);
         } catch (error) {
             setError('Failed to fetch additional fees.');
@@ -29,7 +29,7 @@ const AdditionalFeesPage = () => {
 
         setLoading(true);
         try {
-            const response = await axiosInstance.post('/settings/additional-fees', {
+            const response = await axiosInstance.post('/api/settings/additional-fees', {
                 feeName,
                 amount,
             });

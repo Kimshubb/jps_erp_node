@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from React build
-//app.use(express.static(path.join(__dirname, '../frontend/build')));
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Serve static files
 app.use('/images', express.static(path.join(__dirname, 'public/uploads')));
@@ -45,7 +45,7 @@ app.use('/resources', express.static(path.join(__dirname, 'resources')));
 app.use('/api/auth', authRoutes);
 app.use('/api', isAuthenticated, mainRoutes); // Protected main routes
 app.use('/api/students', studentRoutes); // Protected student routes
-app.use('/settings', isAuthenticated, settingsRoutes); // Protected settings routes
+app.use('/api/settings', isAuthenticated, settingsRoutes); // Protected settings routes
 app.use('/api/payments', isAuthenticated, paymentRoutes); // Protected payment routes
 app.use('/api/teachers', isAuthenticated, teacherRoutes);
 app.use('/api/images', imageRoutes);
@@ -79,9 +79,9 @@ app.use((err, req, res, next) => {
 });
 
 // Serve React frontend for all other routes
-//app.get('*', (req, res) => {
-   // res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-//});
+app.get('*', (req, res) => {
+   res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
 // Server Configuration
 const PORT = process.env.PORT || 5000;

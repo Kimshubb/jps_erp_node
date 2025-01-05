@@ -21,7 +21,7 @@ const AdditionalFees = () => {
   
       const [associatedResponse, allFeesResponse] = await Promise.all([
         axiosInstance.get(`/api/students/${studentId}/additional-fees`),
-        axiosInstance.get('/settings/additional-fees'),
+        axiosInstance.get('/api/settings/additional-fees'),
       ]);
   
       console.log('Associated Fees:', associatedResponse.data); // Debug

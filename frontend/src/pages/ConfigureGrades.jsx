@@ -16,7 +16,7 @@ const ConfigureGrades = () => {
   const fetchGrades = async () => {
     try {
       setIsLoading(true);
-      const response = await axiosInstance.get('/settings/configure-grades');
+      const response = await axiosInstance.get('/api/settings/configure-grades');
       setGrades(response.data.grades);
     } catch (error) {
       setError('Failed to fetch grades. Please try again.');
@@ -34,7 +34,7 @@ const ConfigureGrades = () => {
 
     try {
       setIsLoading(true);
-      const response = await axiosInstance.post('/settings/configure-grades', {
+      const response = await axiosInstance.post('/api/settings/configure-grades', {
         grades: [{ name: gradeName.trim(), streams: [] }]
       });
 
@@ -65,7 +65,7 @@ const ConfigureGrades = () => {
 
       const gradeToUpdate = grades.find(grade => grade.name === selectedGrade);
       
-      const response = await axiosInstance.post('/settings/configure-grades', {
+      const response = await axiosInstance.post('/api/settings/configure-grades', {
         grades: [{
           name: gradeToUpdate.name,
           streams: [...new Set([...gradeToUpdate.streams.map(s => s.name), ...streamNames])]

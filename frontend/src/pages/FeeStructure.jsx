@@ -63,7 +63,7 @@ const ManageFeeStructures = () => {
             setLoading(true);
             setError(null);
 
-            const response = await axiosInstance.get('/settings/fee-structure', {
+            const response = await axiosInstance.get('/api/settings/fee-structure', {
                 params: filters,
             });
 
@@ -137,7 +137,7 @@ const ManageFeeStructures = () => {
                 ass_books: parseFloat(formData.ass_books),
                 others: parseFloat(formData.others) || 0
             };
-            await axiosInstance.post('/settings/fee-structure', payload);
+            await axiosInstance.post('/api/settings/fee-structure', payload);
 
             fetchFeeStructures(); // Refresh Fee Structures
             handleClose(); // Close Modal
