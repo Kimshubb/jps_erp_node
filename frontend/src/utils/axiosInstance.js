@@ -13,12 +13,17 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
+        console.log('Token being attached', token);
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            console.log('Headers after token attachment', config.headers);
         }
         return config;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+        console.error('Request intercepter error', error)
+        return Promise.reject(error)
+    }
 );
 
 axiosInstance.interceptors.response.use(

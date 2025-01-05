@@ -23,21 +23,27 @@ import AssignSubjects from './pages/Assignsubjects';
 
 const App = () => {
     const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
+    const [user,setUser] = useState(JSON.parse(localStorage.getItem('user')));
     const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
+	const userData = localStorage.getItem('user');
         setAuthToken(token);
+	setUser(userData ? JSON.parse(userData) : null);
         setIsInitialized(true);
     }, []);
 
     const handleAuth = (token) => {
+	console.log('Setting token in auth state:', token);
         if (token) {
             localStorage.setItem('token', token);
             setAuthToken(token);
         } else {
             localStorage.removeItem('token');
+	    localStorage.removeItem('user');
             setAuthToken(null);
+            setUser(null);
         }
     };
 

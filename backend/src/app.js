@@ -23,13 +23,24 @@ const isAuthenticated = require('./middleware/authMiddleware');
 const app = express();
 
 // Middleware Configuration
-app.use(cors());
+// CORS configuration
+const corsOptions = {
+    origin: ['https://www.oneclickskul.com', 'http://localhost:3000'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'DNT', 
+                    'X-CustomHeader', 'Keep-Alive', 'User-Agent', 
+                    'If-Modified-Since', 'Cache-Control'],
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Log requests for debugging
 app.use((req, res, next) => {
-    console.log(`Request Method: ${req.method}, Request URL: ${req.url}`);
+    console.log(`${new Date().toISOString()}Request Method: ${req.method}, Request URL: ${req.url}`);
     next();
 });
 

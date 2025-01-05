@@ -25,22 +25,36 @@ const Login = ({ setAuthToken }) => {
         setError(null);
 
         try {
+            //clear existing tokens
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+
             const response = await axiosInstance.post('/api/auth/login', {
                 username,
                 password
             });
-
-            const { token } = response.data;
+            console.log(response.data.token);
             
-            if (token) {
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', JSON.stringify(response.data.user));
+                //update auth state
                 setAuthToken(token);
+
+                console.log('Token received and stored:', token);
+                console.log('stored user:', user);
+
                 navigate('/dashboard');
             } else {
                 throw new Error('No token received');
             }
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('Login error details:', error);
             setError(error.response?.data?.message || 'Login failed');
+            //clear any stored incomplete data
+            localStorage.remove.Item('token');
+            localStorage.removeItem('user');
+
         } finally {
             setLoading(false);
         }

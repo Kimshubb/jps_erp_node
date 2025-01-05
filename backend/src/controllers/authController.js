@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const login = async (req, res) => {
     const { username, password } = req.body;
+    console.log('Login attempt for username:', username);
 
     try {
         // Find user by username
@@ -27,16 +28,25 @@ const login = async (req, res) => {
             console.log(`User ${username} entered an incorrect password.`);
             return res.status(401).json({ message: 'Invalid credentials.' });
         }
+        const tokenPayload = {
+            userId: user.id,
+            username: user.username,
+            role: user.role,
+            schoolId: user.schoolId
+        };
+        console.log('Creating token with payload:', tokenPayload);
 
         // If login successful, generate JWT token
         const token = jwt.sign(
-            { userId: user.id, username: user.username, role: user.role, schoolId: user.schoolId },
+            tokenPayload,
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: '24h' }
         );
+        console.log('Token created successfully');
+        // Set CORS headers explicitly for login response
+        //res.header('Access-Control-Allow-Credentials', 'true');
+        //res.header('Access-Control-Allow-Origin', req.headers.origin);
 
-        // Return token and user info as JSON response
-        console.log(`User ${user.username} logged in successfully.`);
         return res.json({ message: 'Login successful', token, user: { id: user.id, username: user.username, role: user.role, schoolId: user.schoolId } });
 
     } catch (error) {
