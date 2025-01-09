@@ -24,19 +24,19 @@ const app = express();
 
 // Middleware Configuration
 // CORS configuration
+// app.js
 const corsOptions = {
-    origin: ['https://www.oneclickskul.com', 'http://localhost:3000'],
+    origin: 'https://www.oneclickskul.com',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'DNT', 
                     'X-CustomHeader', 'Keep-Alive', 'User-Agent', 
                     'If-Modified-Since', 'Cache-Control'],
     credentials: true,
-    maxAge: 86400, // 24 hours
+    maxAge: 86400,
     optionsSuccessStatus: 204
 };
 
 app.disable('x-powered-by');
-
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -45,11 +45,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()}Request Method: ${req.method}, Request URL: ${req.url}`);
     next();
-});
-//test endpoint to verify CORS
-app.options('/api/auth/login', (req, res) => {
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.status(204).end();
 });
 
 // Serve static files from React build
