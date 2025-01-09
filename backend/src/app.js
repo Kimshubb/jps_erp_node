@@ -35,12 +35,19 @@ const app = express();
     optionsSuccessStatus: 204
 };*/
 const corsOptions = {
+    origin: 'https://www.oneclickskul.com',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'DNT', 
+                    'X-CustomHeader', 'Keep-Alive', 'User-Agent', 
+                    'If-Modified-Since', 'Cache-Control'],
     credentials: true,
-    origin: true // This will respect the Origin header from the request
+    maxAge: 3600,
+    optionsSuccessStatus: 204
 };
 
 app.disable('x-powered-by');
 app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
