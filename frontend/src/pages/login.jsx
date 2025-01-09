@@ -39,10 +39,10 @@ const Login = ({ setAuthToken }) => {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 //update auth state
-                setAuthToken(token);
+                setAuthToken(response.data.token);
 
-                console.log('Token received and stored:', token);
-                console.log('stored user:', user);
+                console.log('Token received and stored:', response.data.token);
+                console.log('stored user:', response.data.user);
 
                 navigate('/dashboard');
             } else {
