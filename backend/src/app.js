@@ -24,8 +24,7 @@ const app = express();
 
 // Middleware Configuration
 // CORS configuration
-// app.js
-const corsOptions = {
+/*const corsOptions = {
     origin: 'https://www.oneclickskul.com',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'DNT', 
@@ -34,6 +33,10 @@ const corsOptions = {
     credentials: true,
     maxAge: 86400,
     optionsSuccessStatus: 204
+};*/
+const corsOptions = {
+    credentials: true,
+    origin: true // This will respect the Origin header from the request
 };
 
 app.disable('x-powered-by');
