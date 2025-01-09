@@ -34,7 +34,7 @@ const Login = ({ setAuthToken }) => {
                 password
             });
             console.log(response.data.token);
-            
+
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -52,7 +52,7 @@ const Login = ({ setAuthToken }) => {
             console.error('Login error details:', error);
             setError(error.response?.data?.message || 'Login failed');
             //clear any stored incomplete data
-            localStorage.remove.Item('token');
+            localStorage.removeItem('token');
             localStorage.removeItem('user');
 
         } finally {

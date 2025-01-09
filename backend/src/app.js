@@ -31,8 +31,11 @@ const corsOptions = {
                     'X-CustomHeader', 'Keep-Alive', 'User-Agent', 
                     'If-Modified-Since', 'Cache-Control'],
     credentials: true,
+    maxAge: 86400, // 24 hours
     optionsSuccessStatus: 204
 };
+
+app.disable('x-powered-by');
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -42,6 +45,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()}Request Method: ${req.method}, Request URL: ${req.url}`);
     next();
+});
+//test endpoint to verify CORS
+app.options('/api/auth/login', (req, res) => {
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.status(204).end();
 });
 
 // Serve static files from React build
