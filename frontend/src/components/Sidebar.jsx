@@ -29,7 +29,9 @@ import {
   BarChart as ReportsIcon,
   Tune as ConfigureIcon,
   Brightness4 as ThemeIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  ChevronLeft as CollapseIcon,
+  ChevronRight as ExpandIcon,
 } from '@mui/icons-material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
@@ -41,6 +43,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
     settings: false,
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false); // Collapsible state
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -99,23 +102,25 @@ function Sidebar({ schoolName, onToggleTheme }) {
 
   const renderMenuItem = (item, index, isChild = false) => {
     const isActive = location.pathname === item.path;
-    const itemClass = `sidebar-item ${isActive ? 'active' : ''} ${isChild ? 'child-item' : ''}`;
+    const itemClass = `sidebar-item ${isActive ? 'active' : ''} ${
+      isChild ? 'child-item' : ''
+    } ${collapsed ? 'collapsed' : ''}`;
 
     if (item.children) {
       return (
         <React.Fragment key={index}>
-          <ListItem 
-            button 
+          <ListItem
+            button
             className={itemClass}
             onClick={() => handleClick(item.label.toLowerCase())}
           >
             <ListItemIcon className="sidebar-icon">{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} className="sidebar-text" />
+            {!collapsed && <ListItemText primary={item.label} className="sidebar-text" />}
             {open[item.label.toLowerCase()] ? <ExpandLess /> : <ExpandMore />}
           </ListItem>
-          <Collapse 
-            in={open[item.label.toLowerCase()]} 
-            timeout="auto" 
+          <Collapse
+            in={!collapsed && open[item.label.toLowerCase()]}
+            timeout="auto"
             unmountOnExit
             className="sidebar-collapse"
           >
@@ -135,24 +140,28 @@ function Sidebar({ schoolName, onToggleTheme }) {
         onClick={() => handleNavigation(item.path)}
       >
         <ListItemIcon className="sidebar-icon">{item.icon}</ListItemIcon>
-        <ListItemText primary={item.label} className="sidebar-text" />
+        {!collapsed && <ListItemText primary={item.label} className="sidebar-text" />}
       </ListItem>
     );
   };
 
   const sidebarContent = (
-    <Box className="sidebar-container">
+    <Box
+      className={`sidebar-container ${collapsed ? 'sidebar-collapsed' : ''}`}
+    >
       <Box className="sidebar-header">
-        <Typography variant="h6" component="div" className="school-name">
-          {schoolName || 'School Name'}
-        </Typography>
-        <Tooltip title="Toggle Theme">
-          <IconButton 
-            color="primary" 
-            onClick={onToggleTheme}
-            className="theme-toggle"
+        {!collapsed && (
+          <Typography variant="h6" component="div" className="school-name">
+            {schoolName || 'School Name'}
+          </Typography>
+        )}
+        <Tooltip title="Toggle Sidebar">
+          <IconButton
+            color="primary"
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="collapse-toggle"
           >
-            <ThemeIcon />
+            {collapsed ? <ExpandIcon /> : <CollapseIcon />}
           </IconButton>
         </Tooltip>
       </Box>
@@ -162,11 +171,13 @@ function Sidebar({ schoolName, onToggleTheme }) {
         {menuItems.map((item, index) => renderMenuItem(item, index))}
       </List>
 
-      <Box className="sidebar-footer">
-        <Typography variant="caption" className="footer-text">
-          © 2024 School Management System
-        </Typography>
-      </Box>
+      {!collapsed && (
+        <Box className="sidebar-footer">
+          <Typography variant="caption" className="footer-text">
+            © 2024 School Management System
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 
@@ -186,7 +197,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
           open={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
           classes={{
-            paper: 'mobile-sidebar-content'
+            paper: 'mobile-sidebar-content',
           }}
         >
           {sidebarContent}
