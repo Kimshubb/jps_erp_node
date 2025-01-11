@@ -1,0 +1,169 @@
+.sidebar-container {
+    width: 280px;
+    background-color: #ffffff;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .school-name {
+    font-weight: 600 !important;
+    color: #1976d2;
+    font-size: 1.25rem !important;
+    flex-grow: 1;
+  }
+  
+  .theme-toggle {
+    padding: 8px !important;
+  }
+  
+  .sidebar-divider {
+    margin: 8px 0 !important;
+    background-color: rgba(0, 0, 0, 0.08) !important;
+  }
+  
+  .sidebar-nav {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 8px !important;
+  }
+  
+  /* Custom scrollbar */
+  .sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+  
+  .sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  .sidebar-item {
+    border-radius: 8px !important;
+    margin: 4px 0 !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .sidebar-item:hover {
+    background-color: rgba(25, 118, 210, 0.08) !important;
+  }
+  
+  .sidebar-item.active {
+    background-color: rgba(25, 118, 210, 0.12) !important;
+  }
+  
+  .sidebar-icon {
+    min-width: 40px !important;
+    color: #1976d2 !important;
+  }
+  
+  .sidebar-text span {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+  }
+  
+  .child-item {
+    padding-left: 32px !important;
+  }
+  
+  .sidebar-collapse {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  .sidebar-footer {
+    padding: 16px;
+    text-align: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  
+  .footer-text {
+    color: rgba(0, 0, 0, 0.6) !important;
+  }
+  
+  /* Mobile styles */
+  .mobile-menu-button {
+    position: fixed !important;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+  }
+  
+  .mobile-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: flex;
+  }
+  
+  .mobile-sidebar-content {
+    width: 280px;
+    height: 100%;
+    background-color: #ffffff;
+    position: relative;
+    animation: slideIn 0.3s ease;
+  }
+  
+  .mobile-close-button {
+    position: absolute !important;
+    top: 10px;
+    right: 10px;
+  }
+  
+  @keyframes slideIn {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .sidebar-container {
+      background-color: #1a1a1a;
+    }
+  
+    .sidebar-text span {
+      color: rgba(255, 255, 255, 0.87);
+    }
+  
+    .sidebar-item:hover {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+    }
+  
+    .sidebar-item.active {
+      background-color: rgba(255, 255, 255, 0.12) !important;
+    }
+  
+    .sidebar-collapse {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+  
+    .footer-text {
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+  }

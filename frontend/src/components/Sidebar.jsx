@@ -31,6 +31,7 @@ import {
   People as PeopleIcon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
+import './Sidebar.css';
 
 function Sidebar({ schoolName, onToggleTheme }) {
   const [open, setOpen] = useState({
@@ -91,46 +92,25 @@ function Sidebar({ schoolName, onToggleTheme }) {
 
   const renderMenuItem = (item, index, isChild = false) => {
     const isActive = location.pathname === item.path;
-    const itemProps = {
-      sx: {
-        ...(!isChild && {
-          borderRadius: 1,
-          margin: '4px 1px',
-          '&:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          },
-        }),
-        ...(isActive && {
-          backgroundColor: 'rgba(0, 0, 0, 0.08)',
-          fontWeight: 'bold',
-        }),
-        color: 'theme.palette.primary.main',
-        transition: 'all 0.3s ease',
-      },
-      onClick: () => {
-        if (isMobile) setIsMobileSidebarOpen(false);
-        if (item.children) handleClick(item.label.toLowerCase());
-      }
-    };
+    const itemClass = `sidebar-item ${isActive ? 'active' : ''} ${isChild ? 'child-item' : ''}`;
 
     if (item.children) {
       return (
         <React.Fragment key={index}>
-          <Tooltip title={item.label} placement="right">
-            <ListItem 
-              button 
-              {...itemProps}
-              onClick={() => handleClick(item.label.toLowerCase())}
-            >
-              <ListItemIcon sx={{ color: 'text.primary' }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-              {open[item.label.toLowerCase()] ? <ExpandLess /> : <ExpandMore />}
-            </ListItem>
-          </Tooltip>
+          <ListItem 
+            button 
+            className={itemClass}
+            onClick={() => handleClick(item.label.toLowerCase())}
+          >
+            <ListItemIcon className="sidebar-icon">{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} className="sidebar-text" />
+            {open[item.label.toLowerCase()] ? <ExpandLess /> : <ExpandMore />}
+          </ListItem>
           <Collapse 
             in={open[item.label.toLowerCase()]} 
             timeout="auto" 
             unmountOnExit
+            className="sidebar-collapse"
           >
             <List component="div" disablePadding>
               {item.children.map((child, idx) => renderMenuItem(child, idx, true))}
@@ -141,77 +121,44 @@ function Sidebar({ schoolName, onToggleTheme }) {
     }
 
     return (
-      <Tooltip title={item.label} placement="right" key={index}>
-        <ListItem
-          button
-          component={Link}
-          to={item.path}
-          {...itemProps}
-        >
-          <ListItemIcon sx={{ color: 'text.primary' }}>{item.icon}</ListItemIcon>
-          <ListItemText primary={item.label} />
-        </ListItem>
-      </Tooltip>
+      <ListItem
+        button
+        component={Link}
+        to={item.path}
+        className={itemClass}
+        key={index}
+      >
+        <ListItemIcon className="sidebar-icon">{item.icon}</ListItemIcon>
+        <ListItemText primary={item.label} className="sidebar-text" />
+      </ListItem>
     );
   };
 
   const sidebarContent = (
-    <Box
-      sx={{
-        width: 250,
-        bgcolor: 'theme.palette.primary.main',
-        boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.1)',
-        color: 'theme.palette.primary.contrastText',
-        minHeight: '100vh',
-        paddingTop: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        transition: 'width 0.3s ease',
-      }}
-    >
-      {/* School Name and Theme Toggle */}
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          paddingX: 2,
-        }}
-      >
-        <Typography 
-          variant="h6" 
-          component="div" 
-          sx={{ 
-            fontWeight: 'bold', 
-            flexGrow: 1, 
-            textAlign: 'center',
-            color: 'primary.main'
-          }}
-        >
+    <Box className="sidebar-container">
+      <Box className="sidebar-header">
+        <Typography variant="h6" component="div" className="school-name">
           {schoolName || 'School Name'}
         </Typography>
         <Tooltip title="Toggle Theme">
           <IconButton 
             color="primary" 
             onClick={onToggleTheme}
-            size="small"
+            className="theme-toggle"
           >
             <ThemeIcon />
           </IconButton>
         </Tooltip>
       </Box>
-      <Divider sx={{ my: 2, bgcolor: theme.palette.primary.contrastText}} />
+      <Divider className="sidebar-divider" />
 
-      {/* Menu Items */}
-      <List component="nav" sx={{ flexGrow: 1 }}>
+      <List component="nav" className="sidebar-nav">
         {menuItems.map((item, index) => renderMenuItem(item, index))}
       </List>
 
-      {/* Footer or Additional Content */}
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="caption" color="text.secondary">
-          © 2023 School Management System
+      <Box className="sidebar-footer">
+        <Typography variant="caption" className="footer-text">
+          © 2024 School Management System
         </Typography>
       </Box>
     </Box>
@@ -224,37 +171,18 @@ function Sidebar({ schoolName, onToggleTheme }) {
           color="primary"
           aria-label="open sidebar"
           onClick={() => setIsMobileSidebarOpen(true)}
-          sx={{ position: 'fixed', top: 10, left: 10, zIndex: 1000 }}
+          className="mobile-menu-button"
         >
           <MenuIcon />
         </IconButton>
         {isMobileSidebarOpen && (
-          <Box
-            sx={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              bgcolor: 'rgba(0,0,0,0.5)',
-              zIndex: 999,
-            }}
-            onClick={() => setIsMobileSidebarOpen(false)}
-          >
-            <Box
-              sx={{
-                width: 250,
-                height: '100%',
-                bgcolor: 'background.paper',
-                overflowY: 'auto',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
+          <Box className="mobile-sidebar-overlay" onClick={() => setIsMobileSidebarOpen(false)}>
+            <Box className="mobile-sidebar-content" onClick={(e) => e.stopPropagation()}>
               <IconButton
                 color="primary"
                 aria-label="close sidebar"
                 onClick={() => setIsMobileSidebarOpen(false)}
-                sx={{ position: 'absolute', top: 10, right: 10 }}
+                className="mobile-close-button"
               >
                 <CloseIcon />
               </IconButton>
@@ -270,4 +198,3 @@ function Sidebar({ schoolName, onToggleTheme }) {
 }
 
 export default Sidebar;
-
