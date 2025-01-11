@@ -152,7 +152,7 @@ const MainLayout = ({ children }) => {
                 </Box>
             )}
 
-            {/* Main Content */}
+            {/* Main Content Wrapper */}
             <Box
                 component="main"
                 sx={{
@@ -174,26 +174,75 @@ const MainLayout = ({ children }) => {
                     }),
                 }}
             >
+                {/* Topbar */}
                 <Topbar 
                     user={user}
                     currentTerm={currentTerm}
                     onMenuClick={handleSidebarToggle}
                     showMenuIcon={isMobile}
+                    sx={{
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 1100,
+                        backgroundColor: 'background.paper',
+                        borderBottom: 1,
+                        borderColor: 'divider'
+                    }}
                 />
                 
+                {/* Scrollable Content Container */}
                 <Box
                     sx={{
                         flexGrow: 1,
-                        p: {
-                            xs: 2,
-                            sm: 3,
-                            md: 4
-                        },
-                        overflow: 'auto',
-                        backgroundColor: 'background.default'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        position: 'relative'
                     }}
                 >
-                    {children}
+                    {/* Content Area */}
+                    <Box
+                        sx={{
+                            flexGrow: 1,
+                            overflow: 'auto',
+                            height: '100%',
+                            // Responsive padding
+                            p: {
+                                xs: 1,  // 8px padding on mobile
+                                sm: 2,  // 16px padding on tablet
+                                md: 3   // 24px padding on desktop
+                            },
+                            // Maximum width constraint
+                            maxWidth: {
+                                lg: '1440px',
+                                xl: '1600px'
+                            },
+                            // Center content if width is less than max-width
+                            mx: 'auto',
+                            width: '100%',
+                            // Minimum width to prevent squishing
+                            minWidth: {
+                                xs: '300px',
+                                sm: '400px'
+                            },
+                            // Background and spacing
+                            backgroundColor: 'background.default',
+                            boxSizing: 'border-box',
+                        }}
+                    >
+                        {/* Actual page content */}
+                        <Box
+                            sx={{
+                                minHeight: '100%',
+                                borderRadius: 1,
+                                backgroundColor: 'background.paper',
+                                p: { xs: 1, sm: 2 },
+                                boxShadow: 1
+                            }}
+                        >
+                            {children}
+                        </Box>
+                    </Box>
                 </Box>
             </Box>
         </Box>

@@ -28,7 +28,7 @@ import {
 } from '@mui/icons-material';
 
 const SIDEBAR_WIDTH = {
-  expanded: 250,
+  expanded: 280,
   collapsed: 64
 };
 
