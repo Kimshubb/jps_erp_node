@@ -47,12 +47,13 @@ class SchoolDataService {
         try {
             const currentTerm = await this.getCurrentTerm();
             
-            // Base select object that's always needed
+            // Base select object with improved relations
             const baseSelect = {
                 id: true,
                 method: true,
                 amount: true,
                 payDate: true,
+                code: true, // Always include code since it's needed for MPesa relation
                 student: {
                     select: {
                         fullName: true,
@@ -62,49 +63,64 @@ class SchoolDataService {
                     },
                 },
             };
-
-            // Additional fields for verification/export
-            const verificationFields = {
-                code: true,
-                isVerified: true,
-            };
-
-            // Combine select fields based on need
-            const selectFields = includeVerification 
-                ? { ...baseSelect, ...verificationFields }
-                : baseSelect;
-
-            // Base query options
+    
+            // If verification is needed, include MPesa transaction details
+            if (includeVerification) {
+                baseSelect.mpesaTransaction = {
+                    select: {
+                        verified: true,
+                        amount: true,
+                    }
+                };
+            }
+    
+            // Query options with proper relations
             const queryOptions = {
                 where: { 
                     schoolId: this.schoolId,
-                    termId: currentTerm.id 
+                    termId: currentTerm.id,
                 },
                 orderBy: { payDate: 'desc' },
-                select: selectFields,
+                select: baseSelect,
             };
-
+    
             // Add pagination if limit is provided
             if (typeof limit === 'number') {
                 queryOptions.take = limit;
                 queryOptions.skip = offset || 0;
             }
-
-            return await prisma.feePayment.findMany(queryOptions);
+    
+            // Execute query
+            const payments = await prisma.feePayment.findMany(queryOptions);
+    
+            // Transform the results to match the expected format
+            return payments.map(payment => ({
+                ...payment,
+                isVerified: payment.mpesaTransaction?.verified ?? null,
+                // Remove mpesaTransaction from response if it wasn't requested
+                ...(includeVerification ? {} : { mpesaTransaction: undefined })
+            }));
+    
         } catch (error) {
             console.error('Error fetching payments:', error);
             throw error;
         }
     }
-
+    
     // Method for paginated list view
     async getRecentPayments(limit = 10, offset = 0) {
-        return this.getPayments({ limit, offset, includeVerification: true });
+        return this.getPayments({ 
+            limit, 
+            offset, 
+            includeVerification: true 
+        });
     }
-
+    
     // Method for export (gets all payments)
     async getAllPaymentsForExport() {
-        return this.getPayments({ includeVerification: true });
+        return this.getPayments({ 
+            includeVerification: true 
+        });
     }
 
     /**
