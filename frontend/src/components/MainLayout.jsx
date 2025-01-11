@@ -9,11 +9,11 @@ import axiosInstance from '../utils/axiosInstance';
 // Breakpoint constants
 const SIDEBAR_WIDTH = 280;
 const SIDEBAR_WIDTH_COLLAPSED = 64;
-//const MOBILE_BREAKPOINT = 'md'; // Material-UI's medium breakpoint (960px)
+const MOBILE_BREAKPOINT = 'md'; // Material-UI's medium breakpoint (960px)
 
 const MainLayout = ({ children }) => {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isMobile = useMediaQuery(theme.breakpoints.down(MOBILE_BREAKPOINT));
     const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
     
     const [schoolName, setSchoolName] = useState('');
@@ -94,8 +94,8 @@ const MainLayout = ({ children }) => {
 
     const sidebarWidth = isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH;
 
-    return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+   return (
+        <Box sx ={{ display: 'flex', minHeight: '100vh' }}>
             {/* Mobile Sidebar */}
             {isMobile ? (
                 <Drawer
@@ -107,6 +107,12 @@ const MainLayout = ({ children }) => {
                         '& .MuiDrawer-paper': {
                             width: SIDEBAR_WIDTH,
                             boxSizing: 'border-box',
+                            bgcolor: 'background.paper', // Ensure drawer has background
+                            '& .sidebar-container': {    // Apply sidebar styles to drawer
+                                position: 'relative',    // Override fixed position in drawer
+                                width: '100%',
+                                height: '100%'
+                            }
                         },
                     }}
                 >
@@ -135,10 +141,15 @@ const MainLayout = ({ children }) => {
                             '& .MuiDrawer-paper': {
                                 width: sidebarWidth,
                                 boxSizing: 'border-box',
+                                bgcolor: 'background.paper',
                                 transition: theme.transitions.create('width', {
                                     easing: theme.transitions.easing.sharp,
                                     duration: theme.transitions.duration.enteringScreen,
                                 }),
+                                '& .sidebar-container': {
+                                    position: 'relative',
+                                    width: '100%'
+                                }
                             },
                         }}
                         open
@@ -162,11 +173,11 @@ const MainLayout = ({ children }) => {
                     flexDirection: 'column',
                     width: { 
                         xs: '100%',
-                        md: `calc(100% - ${sidebarWidth}px)` 
+                        [MOBILE_BREAKPOINT]: `calc(100% - ${sidebarWidth}px)` 
                     },
                     ml: { 
                         xs: 0,
-                        md: `${sidebarWidth}px` 
+                        [MOBILE_BREAKPOINT]: `${sidebarWidth}px`
                     },
                     transition: theme.transitions.create(['margin', 'width'], {
                         easing: theme.transitions.easing.sharp,
