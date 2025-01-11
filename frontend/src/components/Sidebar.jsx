@@ -45,6 +45,8 @@ function Sidebar({ schoolName, onToggleTheme }) {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobileSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const isLarge = useMediaQuery(theme.breakpoints.up('lg'));
 
   const handleClick = (section) => {
     setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -135,15 +137,19 @@ function Sidebar({ schoolName, onToggleTheme }) {
         onClick={() => handleNavigation(item.path)}
       >
         <ListItemIcon className="sidebar-icon">{item.icon}</ListItemIcon>
-        <ListItemText primary={item.label} className="sidebar-text" />
+        <ListItemText 
+          primary={item.label} 
+          className="sidebar-text"
+          primaryTypographyProps={{ noWrap: true }}
+        />
       </ListItem>
     );
   };
 
   const sidebarContent = (
-    <Box className="sidebar-container">
+    <Box className={`sidebar-container ${isLarge ? 'sidebar-large' : ''}`}>
       <Box className="sidebar-header">
-        <Typography variant="h6" component="div" className="school-name">
+        <Typography variant="h6" component="div" className="school-name" noWrap>
           {schoolName || 'School Name'}
         </Typography>
         <Tooltip title="Toggle Theme">
@@ -158,9 +164,11 @@ function Sidebar({ schoolName, onToggleTheme }) {
       </Box>
       <Divider className="sidebar-divider" />
 
-      <List component="nav" className="sidebar-nav">
-        {menuItems.map((item, index) => renderMenuItem(item, index))}
-      </List>
+      <Box className="sidebar-scroll-container">
+        <List component="nav" className="sidebar-nav">
+          {menuItems.map((item, index) => renderMenuItem(item, index))}
+        </List>
+      </Box>
 
       <Box className="sidebar-footer">
         <Typography variant="caption" className="footer-text">
@@ -181,16 +189,28 @@ function Sidebar({ schoolName, onToggleTheme }) {
         >
           <MenuIcon />
         </IconButton>
-        <Drawer
+        <SwipeableDrawer
           anchor="left"
           open={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
+          onOpen={() => setIsMobileSidebarOpen(true)}
+          swipeAreaWidth={0}
+          disableBackdropTransition
+          disableDiscovery
           classes={{
             paper: 'mobile-sidebar-content'
           }}
         >
+          <IconButton
+            color="primary"
+            aria-label="close sidebar"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="mobile-close-button"
+          >
+            <CloseIcon />
+          </IconButton>
           {sidebarContent}
-        </Drawer>
+        </SwipeableDrawer>
       </>
     );
   }
