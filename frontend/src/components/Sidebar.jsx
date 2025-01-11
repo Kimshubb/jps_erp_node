@@ -11,7 +11,8 @@ import {
   IconButton,
   Tooltip,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Drawer
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -30,7 +31,7 @@ import {
   Brightness4 as ThemeIcon,
   People as PeopleIcon
 } from '@mui/icons-material';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 
 function Sidebar({ schoolName, onToggleTheme }) {
@@ -41,11 +42,17 @@ function Sidebar({ schoolName, onToggleTheme }) {
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleClick = (section) => {
     setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const handleNavigation = (path) => {
+    navigate(path);
+    setIsMobileSidebarOpen(false);
   };
 
   const menuItems = [
@@ -123,10 +130,9 @@ function Sidebar({ schoolName, onToggleTheme }) {
     return (
       <ListItem
         button
-        component={Link}
-        to={item.path}
         className={itemClass}
         key={index}
+        onClick={() => handleNavigation(item.path)}
       >
         <ListItemIcon className="sidebar-icon">{item.icon}</ListItemIcon>
         <ListItemText primary={item.label} className="sidebar-text" />
@@ -175,21 +181,16 @@ function Sidebar({ schoolName, onToggleTheme }) {
         >
           <MenuIcon />
         </IconButton>
-        {isMobileSidebarOpen && (
-          <Box className="mobile-sidebar-overlay" onClick={() => setIsMobileSidebarOpen(false)}>
-            <Box className="mobile-sidebar-content" onClick={(e) => e.stopPropagation()}>
-              <IconButton
-                color="primary"
-                aria-label="close sidebar"
-                onClick={() => setIsMobileSidebarOpen(false)}
-                className="mobile-close-button"
-              >
-                <CloseIcon />
-              </IconButton>
-              {sidebarContent}
-            </Box>
-          </Box>
-        )}
+        <Drawer
+          anchor="left"
+          open={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
+          classes={{
+            paper: 'mobile-sidebar-content'
+          }}
+        >
+          {sidebarContent}
+        </Drawer>
       </>
     );
   }

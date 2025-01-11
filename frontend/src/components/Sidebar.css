@@ -1,11 +1,12 @@
 .sidebar-container {
-    width: 280px;
+    width: 300px;
+    min-width: 300px;
     background-color: #ffffff;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    position: relative;
+    position: fixed;
+    overflow: hidden;
     transition: all 0.3s ease;
   }
   
@@ -14,6 +15,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-height: 80px;
   }
   
   .school-name {
@@ -21,6 +23,9 @@
     color: #1976d2;
     font-size: 1.25rem !important;
     flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .theme-toggle {
@@ -35,10 +40,11 @@
   .sidebar-nav {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 8px !important;
+    overflow-x: hidden;
+    padding: 8px 16px !important;
   }
   
-  /* Custom scrollbar */
+  /* Custom scrollbar - only for the inner content */
   .sidebar-nav::-webkit-scrollbar {
     width: 6px;
   }
@@ -60,6 +66,8 @@
     border-radius: 8px !important;
     margin: 4px 0 !important;
     transition: all 0.2s ease !important;
+    padding-right: 16px !important;
+    width: 100% !important;
   }
   
   .sidebar-item:hover {
@@ -75,10 +83,17 @@
     color: #1976d2 !important;
   }
   
+  .sidebar-text {
+    margin-right: 8px !important;
+  }
+  
   .sidebar-text span {
     font-size: 0.95rem;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.87);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   
   .child-item {
@@ -87,12 +102,14 @@
   
   .sidebar-collapse {
     background-color: rgba(0, 0, 0, 0.02);
+    width: 100%;
   }
   
   .sidebar-footer {
     padding: 16px;
     text-align: center;
     border-top: 1px solid rgba(0, 0, 0, 0.08);
+    min-height: 60px;
   }
   
   .footer-text {
@@ -107,38 +124,14 @@
     z-index: 1000;
   }
   
-  .mobile-sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    display: flex;
-  }
-  
-  .mobile-sidebar-content {
-    width: 280px;
-    height: 100%;
-    background-color: #ffffff;
-    position: relative;
-    animation: slideIn 0.3s ease;
-  }
-  
   .mobile-close-button {
     position: absolute !important;
     top: 10px;
     right: 10px;
   }
   
-  @keyframes slideIn {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(0);
-    }
+  .mobile-sidebar-content {
+    width: 300px !important;
   }
   
   /* Dark mode support */
