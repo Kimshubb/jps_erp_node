@@ -23,18 +23,37 @@ const isAuthenticated = require('./middleware/authMiddleware');
 const app = express();
 
 // Middleware Configuration
-app.use(cors());
+// CORS configuration
+/*const corsOptions = {
+    origin: 'https://www.oneclickskul.com',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'DNT', 
+                    'X-CustomHeader', 'Keep-Alive', 'User-Agent', 
+                    'If-Modified-Since', 'Cache-Control'],
+    credentials: true,
+    maxAge: 86400,
+    optionsSuccessStatus: 204
+};*/
+const corsOptions = {
+    origin: false, // Disable CORS in Express since Nginx handles it
+    credentials: true,
+};
+app.use(cors(corsOptions));
+
+app.disable('x-powered-by');
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Log requests for debugging
 app.use((req, res, next) => {
-    console.log(`Request Method: ${req.method}, Request URL: ${req.url}`);
+    console.log(`${new Date().toISOString()}Request Method: ${req.method}, Request URL: ${req.url}`);
     next();
 });
 
 // Serve static files from React build
-//app.use(express.static(path.join(__dirname, '../frontend/build')));
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Serve static files
 app.use('/images', express.static(path.join(__dirname, 'public/uploads')));
@@ -45,7 +64,7 @@ app.use('/resources', express.static(path.join(__dirname, 'resources')));
 app.use('/api/auth', authRoutes);
 app.use('/api', isAuthenticated, mainRoutes); // Protected main routes
 app.use('/api/students', studentRoutes); // Protected student routes
-app.use('/settings', isAuthenticated, settingsRoutes); // Protected settings routes
+app.use('/api/settings', isAuthenticated, settingsRoutes); // Protected settings routes
 app.use('/api/payments', isAuthenticated, paymentRoutes); // Protected payment routes
 app.use('/api/teachers', isAuthenticated, teacherRoutes);
 app.use('/api/images', imageRoutes);
@@ -71,7 +90,6 @@ app.get('/api', (req, res) => {
     });
 });
 
-
 //app.use(errorHandler);
 
 app.use((err, req, res, next) => {
@@ -80,9 +98,9 @@ app.use((err, req, res, next) => {
 });
 
 // Serve React frontend for all other routes
-//app.get('*', (req, res) => {
-   // res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-//});
+app.get('*', (req, res) => {
+   res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
 // Server Configuration
 const PORT = process.env.PORT || 5000;

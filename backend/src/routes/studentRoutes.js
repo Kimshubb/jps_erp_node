@@ -1,5 +1,5 @@
 const express = require('express');
-const { addStudent, getStudents, toggleStudentStatus, getStudentById, updateStudent, updateStudentAdditionalFees, getStudentAdditionalFees, associateStudentWithFee } = require('../controllers/StudentController');
+const { addStudent, getStudents, toggleStudentStatus, getStudentById, updateStudent, updateStudentAdditionalFees, getStudentAdditionalFees, associateStudentWithFee } = require('../controllers/studentController');
 console.log("Add student function:", addStudent);
 const { body, param } = require('express-validator');
 //const { authenticateToken } = require('../middleware/authMiddleware');

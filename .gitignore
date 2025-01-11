@@ -1,0 +1,50 @@
+
+# Build outputs
+/dist/
+/build/
+/.vite/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Editor and IDE files
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.idea/
+.vscode/
+*.iml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git-related files
+.git/
+.gitignore
+
+# Cache and temporary files
+.cache/
+tmp/
+*.tmp
+*.temp
+*.bak
+*.pid
+*.seed
+*.gz
+.nyc_output/
+
+# Frontend-specific
+/public/static/
+public/static/js/*.map
+public/static/css/*.map
+public/*.html
+public/favicon.ico
+public/manifest.json
+
+# Backend-specific
+/prisma/migrations/ # If using Prisma migrations
+database.sqlite      # Example: SQLite file if generated locally
