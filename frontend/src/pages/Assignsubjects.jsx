@@ -4,7 +4,7 @@ import {
     Box,
     Typography,
     Button,
-    Grid2,
+    Grid,
     Paper,
     Select,
     MenuItem,
@@ -198,8 +198,8 @@ const AssignSubjectsPage = () => {
                     <Typography variant="h6" gutterBottom>
                         Lesson Load
                     </Typography>
-                    <Grid2 container spacing={2} alignItems="center">
-                        <Grid2 item xs={12}>
+                    <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={12}>
                             <Tooltip 
                                 title={`${total || current || 0} out of ${max} lessons per week`}
                                 placement="top"
@@ -210,14 +210,14 @@ const AssignSubjectsPage = () => {
                                     color={progressValue > 80 ? 'warning' : 'primary'}
                                 />
                             </Tooltip>
-                        </Grid2>
-                        <Grid2 item xs={12}>
+                        </Grid>
+                        <Grid item xs={12}>
                             <Typography variant="body2" color="text.secondary">
                                 {total || current || 0} / {max} lessons per week
                                 {requested && ` (Requested: ${requested} lessons)`}
                             </Typography>
-                        </Grid2>
-                    </Grid2>
+                        </Grid>
+                    </Grid>
                 </CardContent>
             </Card>
         );
@@ -322,8 +322,8 @@ const AssignSubjectsPage = () => {
             {renderLessonLoadIndicator()}
 
             <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-                <Grid2 container spacing={3}>
-                    <Grid2 item xs={12} md={6}>
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
                         <FormControl fullWidth>
                             <InputLabel>Teacher</InputLabel>
                             <Select
@@ -340,9 +340,9 @@ const AssignSubjectsPage = () => {
                                 ))}
                             </Select>
                         </FormControl>
-                    </Grid2>
+                    </Grid>
 
-                    <Grid2 item xs={12} md={6}>
+                    <Grid item xs={12} md={6}>
                         <FormControl fullWidth>
                             <InputLabel>Grade</InputLabel>
                             <Select
@@ -360,9 +360,9 @@ const AssignSubjectsPage = () => {
                                 ))}
                             </Select>
                         </FormControl>
-                    </Grid2>
+                    </Grid>
 
-                    <Grid2 item xs={12} md={6}>
+                    <Grid item xs={12} md={6}>
                         <FormControl fullWidth>
                             <InputLabel>Stream</InputLabel>
                             <Select
@@ -381,9 +381,9 @@ const AssignSubjectsPage = () => {
                                     ))}
                             </Select>
                         </FormControl>
-                    </Grid2>
+                    </Grid>
 
-                    <Grid2 item xs={12} md={6}>
+                    <Grid item xs={12} md={6}>
                         <FormControl fullWidth>
                             <InputLabel>Subjects</InputLabel>
                             <Select
@@ -411,9 +411,9 @@ const AssignSubjectsPage = () => {
                                     ))}
                             </Select>
                         </FormControl>
-                    </Grid2>
+                    </Grid>
 
-                    <Grid2 item xs={12}>
+                    <Grid item xs={12}>
                         <Button
                             variant="contained"
                             color="primary"
@@ -422,14 +422,14 @@ const AssignSubjectsPage = () => {
                         >
                             Assign Subjects
                         </Button>
-                    </Grid2>
-                </Grid2>
+                    </Grid>
+                </Grid>
             </Paper>
 
             {/* Filtering Section */}
             <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
-                <Grid2 container spacing={3}>
-                    <Grid2 item xs={12} md={5}>
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={5}>
                         <FormControl fullWidth>
                             <InputLabel>Filter Grade</InputLabel>
                             <Select
@@ -457,9 +457,9 @@ const AssignSubjectsPage = () => {
                                 ))}
                             </Select>
                         </FormControl>
-                    </Grid2>
+                    </Grid>
 
-                    <Grid2 item xs={12} md={5}>
+                    <Grid item xs={12} md={5}>
                         <FormControl fullWidth>
                             <InputLabel>Filter Stream</InputLabel>
                             <Select
@@ -477,9 +477,9 @@ const AssignSubjectsPage = () => {
                                 }
                             </Select>
                         </FormControl>
-                    </Grid2>
+                    </Grid>
 
-                    <Grid2 item xs={12} md={2}>
+                    <Grid item xs={12} md={2}>
                         <Button 
                             variant="contained" 
                             color="primary" 
@@ -489,8 +489,8 @@ const AssignSubjectsPage = () => {
                         >
                             Apply Filter
                         </Button>
-                    </Grid2>
-                </Grid2>
+                    </Grid>
+                </Grid>
             </Paper>
             {/* Filtered Assignments Section */}
             <Typography variant="h4" gutterBottom>
