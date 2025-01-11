@@ -192,7 +192,7 @@ const TestimonialsCarousel = () => {
               gap: '2rem',
               justifyContent: 'center',
               padding: '1rem',
-              flexDirection: { xs: 'column', md: 'row' }
+              flexDirection: isMobile ? 'column' : 'row'
             }}
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}

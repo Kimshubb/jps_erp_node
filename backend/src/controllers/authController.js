@@ -5,6 +5,10 @@ const jwt = require('jsonwebtoken');
 
 const login = async (req, res) => {
     const { username, password } = req.body;
+    console.log('Login attempt received:', {
+        body: req.body,
+        headers: req.headers
+    });
 
     try {
         // Find user by username

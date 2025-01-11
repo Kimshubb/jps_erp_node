@@ -1,3 +1,7 @@
+// To run this, execute the following command in your terminal:
+// node src/cli.js
+// This script will prompt you to enter initial setup details for the admin user and school,
+// and then seed the database with initial grades and subjects.
 require('dotenv').config();
 const inquirer = require('inquirer');
 const bcrypt = require('bcrypt');

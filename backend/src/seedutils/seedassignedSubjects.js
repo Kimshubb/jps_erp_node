@@ -9,7 +9,7 @@ const assignTeacherSubjects = async (schoolId) => {
         const teachers = await prisma.user.findMany({
             where: { 
                 schoolId, 
-                role: 'teacher',
+                role: 'teacher' || 'TEACHER',
                 isActive: true
             },
             include: { 
