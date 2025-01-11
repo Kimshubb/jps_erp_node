@@ -5,7 +5,8 @@ const { validationResult } = require('express-validator');
 const { DateTime } = require('luxon'); // For date handling
 //const FeesUtility = require('../utils/FeeUtility');
 const QRCode = require('qrcode');
-//const SchoolDataService = require('../utils/schoolDataService');
+const SchoolDataService = require('../utils/schoolDataService');
+const { Parser } = require('json2csv');
 
 
 const newPayment = async (req, res) => {
@@ -372,6 +373,159 @@ const getStudentsWithFilters = async (req, res) => {
     } catch (error) {
         console.error('Error fetching students with filters:', error);
         res.status(500).json({ error: 'Failed to fetch students.' });
+    }
+};
+
+
+const getAllPayments = async (req, res) => {
+    // Check for valid user authentication
+    if (!req.user || typeof req.user.schoolId !== 'number') {
+        return res.status(401).json({ 
+            status: 'error',
+            message: 'User not properly authenticated' 
+        });
+    }
+
+    try {
+        // Get pagination parameters from query string with validation
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+        const offset = (page - 1) * limit;
+
+        // Initialize SchoolDataService with the authenticated user's schoolId
+        const schoolDataService = new SchoolDataService(req.user.schoolId);
+
+        // Get payments and total count - currentTerm check is handled within getRecentPayments
+        const [payments, totalCount] = await Promise.all([
+            schoolDataService.getRecentPayments(limit, offset),
+            prisma.feePayment.count({
+                where: { 
+                    schoolId: req.user.schoolId,
+                    term: {
+                        current: true
+                    }
+                }
+            })
+        ]);
+
+        // Check if we got any payments
+        if (!payments || payments.length === 0) {
+            return res.status(200).json({
+                status: 'success',
+                data: {
+                    payments: [],
+                    pagination: {
+                        currentPage: page,
+                        totalPages: 0,
+                        totalItems: 0,
+                        itemsPerPage: limit,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
+                }
+            });
+        }
+
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalCount / limit);
+        const hasNextPage = page < totalPages;
+        const hasPreviousPage = page > 1;
+
+        // Send successful response
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                payments,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalItems: totalCount,
+                    itemsPerPage: limit,
+                    hasNextPage,
+                    hasPreviousPage
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error in getAllPayments:', error);
+        // If the error is about no current term, send a specific message
+        if (error.message === 'No active term found for this school') {
+            return res.status(400).json({
+                status: 'error',
+                message: 'No current term found for this school'
+            });
+        }
+        return res.status(500).json({
+            status: 'error',
+            message: 'An unexpected error occurred',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+const exportPayments = async (req, res) => {
+    if (!req.user || typeof req.user.schoolId !== 'number') {
+        return res.status(401).json({ 
+            status: 'error',
+            message: 'User not properly authenticated' 
+        });
+    }
+
+    try {
+        const schoolDataService = new SchoolDataService(req.user.schoolId);
+        
+        // Get all payments for current term
+        const payments = await schoolDataService.getAllPaymentsForExport();
+
+        // Define fields for CSV
+        const fields = [
+            {
+                label: 'Student Name',
+                value: 'student.fullName'
+            },
+            {
+                label: 'Grade',
+                value: 'student.grade.name'
+            },
+            {
+                label: 'Amount',
+                value: 'amount'
+            },
+            {
+                label: 'Payment Method',
+                value: 'method'
+            },
+            {
+                label: 'Payment Code',
+                value: 'code'
+            },
+            {
+                label: 'Payment Date',
+                value: row => new Date(row.payDate).toLocaleDateString()
+            },
+            {
+                label: 'Status',
+                value: row => row.isVerified ? 'Verified' : 'Pending'
+            }
+        ];
+
+        const json2csvParser = new Parser({ fields });
+        const csv = json2csvParser.parse(payments);
+
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=payments-${new Date().toISOString().split('T')[0]}.csv`);
+
+        return res.status(200).send(csv);
+
+    } catch (error) {
+        console.error('Error exporting payments:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Failed to export payments',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
@@ -790,4 +944,4 @@ const addAdditionalFee = async (req, res) => {
     }
 };*/
 
-module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments/* viewAllPayments, feeReports, searchStudentPayments, addAdditionalFee*/ };
+module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments, getAllPayments, exportPayments/* feeReports, searchStudentPayments, addAdditionalFee*/ };

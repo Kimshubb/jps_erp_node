@@ -1,3 +1,4 @@
+//backend/src/utils/schoolDataService.js
 const prisma = require('./prismaClient');
 
 class SchoolDataService {
@@ -42,31 +43,68 @@ class SchoolDataService {
      * @param {number} schoolId
      * @returns {Promise<object[]>} List of recent payments
      */
-    async getRecentPayments(limit = 10) {
+    async getPayments({ limit, offset, includeVerification = false }) {
         try {
-            return await prisma.feePayment.findMany({
-                where: { schoolId: this.schoolId }, // Query for specific school ID
-                orderBy: { payDate: 'desc' },
-                take: limit,
-                select: {
-                    id: true,
-                    method: true,
-                    amount: true,
-                    payDate: true,
-                    student: {
-                        select: {
-                            fullName: true,
-                            grade: {
-                                select: { name: true },
-                            },
+            const currentTerm = await this.getCurrentTerm();
+            
+            // Base select object that's always needed
+            const baseSelect = {
+                id: true,
+                method: true,
+                amount: true,
+                payDate: true,
+                student: {
+                    select: {
+                        fullName: true,
+                        grade: {
+                            select: { name: true },
                         },
                     },
                 },
-            });
+            };
+
+            // Additional fields for verification/export
+            const verificationFields = {
+                code: true,
+                isVerified: true,
+            };
+
+            // Combine select fields based on need
+            const selectFields = includeVerification 
+                ? { ...baseSelect, ...verificationFields }
+                : baseSelect;
+
+            // Base query options
+            const queryOptions = {
+                where: { 
+                    schoolId: this.schoolId,
+                    termId: currentTerm.id 
+                },
+                orderBy: { payDate: 'desc' },
+                select: selectFields,
+            };
+
+            // Add pagination if limit is provided
+            if (typeof limit === 'number') {
+                queryOptions.take = limit;
+                queryOptions.skip = offset || 0;
+            }
+
+            return await prisma.feePayment.findMany(queryOptions);
         } catch (error) {
-            console.error('Error fetching recent payments:', error);
-            throw new Error('Unable to fetch recent payments');
+            console.error('Error fetching payments:', error);
+            throw error;
         }
+    }
+
+    // Method for paginated list view
+    async getRecentPayments(limit = 10, offset = 0) {
+        return this.getPayments({ limit, offset, includeVerification: true });
+    }
+
+    // Method for export (gets all payments)
+    async getAllPaymentsForExport() {
+        return this.getPayments({ includeVerification: true });
     }
 
     /**

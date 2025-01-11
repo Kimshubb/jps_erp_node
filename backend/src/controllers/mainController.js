@@ -1,3 +1,5 @@
+// Description: Main controller for handling dashboard and other main routes.
+// backend/src/controllers/mainController.js
 const SchoolDataService = require('../utils/schoolDataService');
 const prisma = require('../utils/prismaClient');
 
@@ -40,6 +42,7 @@ const dashboard = async (req, res) => {
 
         if (!currentTerm) {
             console.log("No current term found");
+            
             return res.status(400).json({ 
                 message: 'No current term found for this school. Please set a current term.',
                 schoolName: schoolDetails.name
@@ -60,7 +63,7 @@ const dashboard = async (req, res) => {
             schoolDataService.getInactiveStudentsTerm(currentTerm.id),
             schoolDataService.getPaidViaMethodToday('Cash'),
             schoolDataService.getPaidViaMethodToday('Bank'),
-            schoolDataService.getRecentPayments(10)
+            schoolDataService.getRecentPayments(10, 0)
         ]);
         console.log("Dashboard data:", {
             totalActiveStudents,
@@ -198,7 +201,6 @@ const searchStudent = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while searching for students.' });
     }
 };
-
 
 
 

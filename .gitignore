@@ -24,7 +24,6 @@ Thumbs.db
 
 # Git-related files
 .git/
-.gitignore
 
 # Cache and temporary files
 .cache/
@@ -44,6 +43,8 @@ public/static/css/*.map
 public/*.html
 public/favicon.ico
 public/manifest.json
+/frontend/node_modules/
+
 
 # Backend-specific
 /prisma/migrations/ # If using Prisma migrations
