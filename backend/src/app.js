@@ -1,7 +1,7 @@
 // src/app.js
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
+//const cors = require('cors');
 const path = require('path');
 
 // Route Imports
@@ -33,7 +33,7 @@ const app = express();
     credentials: true,
     maxAge: 86400,
     optionsSuccessStatus: 204
-};*/
+};
 const corsOptions = {
     origin: false, // Disable CORS in Express since Nginx handles it
     credentials: true,
@@ -41,7 +41,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.disable('x-powered-by');
-app.use(cors(corsOptions));
+app.use(cors(corsOptions));*/
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
