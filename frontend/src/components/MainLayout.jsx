@@ -7,13 +7,13 @@ import Topbar from './TopBar';
 import axiosInstance from '../utils/axiosInstance';
 
 // Breakpoint constants
-const SIDEBAR_WIDTH = 240;
+const SIDEBAR_WIDTH = 280;
 const SIDEBAR_WIDTH_COLLAPSED = 64;
-const MOBILE_BREAKPOINT = 'md'; // Material-UI's medium breakpoint (960px)
+//const MOBILE_BREAKPOINT = 'md'; // Material-UI's medium breakpoint (960px)
 
 const MainLayout = ({ children }) => {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down(MOBILE_BREAKPOINT));
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
     
     const [schoolName, setSchoolName] = useState('');
@@ -22,15 +22,22 @@ const MainLayout = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
-
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        return localStorage.getItem('sidebarCollapsed') === 'true';
-    });
+    const [isCollapsed, setIsCollapsed] = useState(isTablet);
 
     // Handle window resize
     useEffect(() => {
-        setIsSidebarOpen(!isMobile);
-        setIsCollapsed(isTablet);
+        const handleResize = () => {
+            if (isMobile) {
+                setIsSidebarOpen(false);
+            } else {
+                setIsSidebarOpen(true);
+                setIsCollapsed(isTablet);
+            }
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, [isMobile, isTablet]);
 
     // Fetch dashboard data
@@ -64,7 +71,9 @@ const MainLayout = ({ children }) => {
     };
 
     const handleCollapse = () => {
-        setIsCollapsed(!isCollapsed);
+        const newCollapsed = !isCollapsed;
+        setIsCollapsed(newCollapsed);
+        localStorage.setItem('sidebarCollapsed', newCollapsed.toString());
     };
 
     if (loading) {
@@ -83,66 +92,62 @@ const MainLayout = ({ children }) => {
         );
     }
 
-    // Calculate sidebar width based on state
-    const getCurrentSidebarWidth = () => {
-        if (isMobile) return 0;
-        if (isCollapsed) return SIDEBAR_WIDTH_COLLAPSED;
-        return SIDEBAR_WIDTH;
-    };
-
-    const sidebarContent = (
-        <Sidebar 
-            schoolName={schoolName}
-            isCollapsed={isCollapsed}
-            onCollapse={handleCollapse}
-        />
-    );
+    const sidebarWidth = isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH;
 
     return (
-        <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-            {/* Mobile Drawer */}
-            {isMobile && (
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+            {/* Mobile Sidebar */}
+            {isMobile ? (
                 <Drawer
                     variant="temporary"
                     open={isSidebarOpen}
                     onClose={handleSidebarToggle}
                     ModalProps={{ keepMounted: true }}
                     sx={{
-                        display: { xs: 'block', [MOBILE_BREAKPOINT]: 'none' },
-                        '& .MuiDrawer-paper': { 
+                        '& .MuiDrawer-paper': {
                             width: SIDEBAR_WIDTH,
                             boxSizing: 'border-box',
                         },
                     }}
                 >
-                    {sidebarContent}
+                    <Sidebar
+                        schoolName={schoolName}
+                        isCollapsed={false}
+                        onCollapse={handleCollapse}
+                    />
                 </Drawer>
-            )}
-
-            {/* Desktop Sidebar */}
-            {!isMobile && (
+            ) : (
+                /* Desktop Sidebar */
                 <Box
+                    component="nav"
                     sx={{
-                        width: getCurrentSidebarWidth(),
+                        width: sidebarWidth,
                         flexShrink: 0,
-                        '& .MuiDrawer-paper': {
-                            width: getCurrentSidebarWidth(),
-                            boxSizing: 'border-box',
-                            transition: theme.transitions.create('width', {
-                                easing: theme.transitions.easing.sharp,
-                                duration: theme.transitions.duration.enteringScreen,
-                            }),
-                        },
+                        transition: theme.transitions.create('width', {
+                            easing: theme.transitions.easing.sharp,
+                            duration: theme.transitions.duration.enteringScreen,
+                        }),
                     }}
                 >
                     <Drawer
                         variant="permanent"
                         sx={{
-                            width: getCurrentSidebarWidth(),
-                            flexShrink: 0,
+                            '& .MuiDrawer-paper': {
+                                width: sidebarWidth,
+                                boxSizing: 'border-box',
+                                transition: theme.transitions.create('width', {
+                                    easing: theme.transitions.easing.sharp,
+                                    duration: theme.transitions.duration.enteringScreen,
+                                }),
+                            },
                         }}
+                        open
                     >
-                        {sidebarContent}
+                        <Sidebar
+                            schoolName={schoolName}
+                            isCollapsed={isCollapsed}
+                            onCollapse={handleCollapse}
+                        />
                     </Drawer>
                 </Box>
             )}
@@ -152,42 +157,42 @@ const MainLayout = ({ children }) => {
                 component="main"
                 sx={{
                     flexGrow: 1,
-                    width: { 
-                        [MOBILE_BREAKPOINT]: `calc(100% - ${getCurrentSidebarWidth()}px)` 
-                    },
-                    height: '100vh',
-                    overflow: 'hidden',
+                    minHeight: '100vh',
                     display: 'flex',
                     flexDirection: 'column',
+                    width: { 
+                        xs: '100%',
+                        md: `calc(100% - ${sidebarWidth}px)` 
+                    },
+                    ml: { 
+                        xs: 0,
+                        md: `${sidebarWidth}px` 
+                    },
+                    transition: theme.transitions.create(['margin', 'width'], {
+                        easing: theme.transitions.easing.sharp,
+                        duration: theme.transitions.duration.enteringScreen,
+                    }),
                 }}
             >
-                {/* Topbar */}
-                <Box sx={{ 
-                    position: 'sticky', 
-                    top: 0, 
-                    zIndex: theme.zIndex.appBar,
-                    bgcolor: 'background.default',
-                    boxShadow: 1,
-                }}>
-                    <Topbar 
-                        user={user} 
-                        currentTerm={currentTerm}
-                        onMenuClick={handleSidebarToggle}
-                        showMenuIcon={isMobile}
-                    />
-                </Box>
-
-                {/* Scrollable Content Area */}
-                <Box sx={{
-                    flexGrow: 1,
-                    overflow: 'auto',
-                    p: {
-                        xs: 2,  // Smaller padding on mobile
-                        sm: 3,  // Medium padding on tablet
-                        md: 6,  // Large padding on desktop
-                    },
-                    bgcolor: 'background.default',
-                }}>
+                <Topbar 
+                    user={user}
+                    currentTerm={currentTerm}
+                    onMenuClick={handleSidebarToggle}
+                    showMenuIcon={isMobile}
+                />
+                
+                <Box
+                    sx={{
+                        flexGrow: 1,
+                        p: {
+                            xs: 2,
+                            sm: 3,
+                            md: 4
+                        },
+                        overflow: 'auto',
+                        backgroundColor: 'background.default'
+                    }}
+                >
                     {children}
                 </Box>
             </Box>
