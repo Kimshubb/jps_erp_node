@@ -1,4 +1,3 @@
-
 # Build outputs
 /dist/
 /build/
@@ -45,7 +44,7 @@ public/favicon.ico
 public/manifest.json
 /frontend/node_modules/
 
-
 # Backend-specific
-/prisma/migrations/ # If using Prisma migrations
-database.sqlite      # Example: SQLite file if generated locally
+/backend/node_modules/    # Exclude backend's node_modules
+/prisma/migrations/       # If using Prisma migrations
+database.sqlite           # Example: SQLite file if generated locally
