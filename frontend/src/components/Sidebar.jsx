@@ -10,7 +10,6 @@ import {
   Typography,
   IconButton,
   Tooltip,
-  useMediaQuery,
   useTheme
 } from '@mui/material';
 import {
@@ -21,8 +20,6 @@ import {
   ExpandLess,
   ExpandMore,
   Logout as LogoutIcon,
-  Menu as MenuIcon,
-  Close as CloseIcon,
   ViewList as ViewListIcon,
   Add as AddIcon,
   BarChart as ReportsIcon,
@@ -34,17 +31,15 @@ import {
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
-function Sidebar({ schoolName, onToggleTheme }) {
+function Sidebar({ schoolName, isCollapsed, onCollapse }) {
   const [open, setOpen] = useState({
     students: false,
     fees: false,
     settings: false,
+    teachers: false
   });
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const handleClick = (section) => {
     setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -107,16 +102,11 @@ function Sidebar({ schoolName, onToggleTheme }) {
           backgroundColor: 'rgba(0, 0, 0, 0.08)',
           fontWeight: 'bold',
         }),
-        color: 'theme.palette.primary.main',
-        transition: 'all 0.3s ease',
+        color: 'inherit',
         minHeight: isCollapsed && !isChild ? '48px' : 'auto',
         justifyContent: isCollapsed ? 'center' : 'flex-start',
         px: isCollapsed ? 1 : 2,
       },
-      onClick: () => {
-        if (isMobile) setIsMobileSidebarOpen(false);
-        if (item.children && !isCollapsed) handleClick(item.label.toLowerCase());
-      }
     };
 
     if (item.children) {
@@ -129,7 +119,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
               onClick={() => !isCollapsed && handleClick(item.label.toLowerCase())}
             >
               <ListItemIcon sx={{ 
-                color: 'text.primary',
+                color: 'inherit',
                 minWidth: isCollapsed ? 'auto' : 40,
                 mr: isCollapsed ? 0 : 2 
               }}>
@@ -144,11 +134,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
             </ListItem>
           </Tooltip>
           {!isCollapsed && (
-            <Collapse 
-              in={open[item.label.toLowerCase()]} 
-              timeout="auto" 
-              unmountOnExit
-            >
+            <Collapse in={open[item.label.toLowerCase()]} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 {item.children.map((child, idx) => renderMenuItem(child, idx, true))}
               </List>
@@ -167,7 +153,7 @@ function Sidebar({ schoolName, onToggleTheme }) {
           {...itemProps}
         >
           <ListItemIcon sx={{ 
-            color: 'text.primary',
+            color: 'inherit',
             minWidth: isCollapsed ? 'auto' : 40,
             mr: isCollapsed ? 0 : 2 
           }}>
@@ -179,147 +165,75 @@ function Sidebar({ schoolName, onToggleTheme }) {
     );
   };
 
-  const sidebarContent = (
+  return (
     <Box
+      className="sidebar-container"
       sx={{
-        width: isCollapsed ? 64 : 250,
-        bgcolor: 'theme.palette.primary.main',
-        boxShadow: '0px 0px 5px rgba(0, 0, 0, 0.1)',
-        color: 'theme.palette.primary.contrastText',
-        height: '100vh',
-        paddingTop: 2,
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
-        transition: 'width 0.3s ease',
-        position: 'relative',
+        overflow: 'hidden',
+        transition: theme.transitions.create(['width', 'margin'], {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
       }}
     >
-      {/* School Name and Theme Toggle */}
+      {/* Header */}
       {!isCollapsed && (
         <>
-          <Box 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between', 
-              paddingX: 2,
-            }}
-          >
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
-                fontWeight: 'bold', 
-                flexGrow: 1, 
-                textAlign: 'center',
-                color: 'primary.main'
-              }}
-            >
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6" noWrap component="div">
               {schoolName || 'School Name'}
             </Typography>
-            <Tooltip title="Toggle Theme">
-              <IconButton 
-                color="primary" 
-                onClick={onToggleTheme}
-                size="small"
-              >
-                <ThemeIcon />
-              </IconButton>
-            </Tooltip>
+            <IconButton onClick={onCollapse} size="small">
+              <ThemeIcon />
+            </IconButton>
           </Box>
-          <Divider sx={{ my: 2, bgcolor: theme.palette.primary.contrastText}} />
+          <Divider />
         </>
       )}
 
       {/* Collapse Toggle Button */}
-      {!isMobile && (
-        <IconButton
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          sx={{
-            position: 'absolute',
-            right: -15,
-            top: 20,
+      <IconButton
+        onClick={onCollapse}
+        sx={{
+          position: 'absolute',
+          right: -15,
+          top: 20,
+          bgcolor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
+          '&:hover': {
             bgcolor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider',
-            '&:hover': {
-              bgcolor: 'background.paper',
-            },
-            zIndex: 1,
-          }}
-          size="small"
-        >
-          {isCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-        </IconButton>
-      )}
+          },
+          zIndex: 1,
+        }}
+        size="small"
+      >
+        {isCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+      </IconButton>
 
       {/* Menu Items */}
-      <List component="nav" sx={{ flexGrow: 1, overflow: 'auto' }}>
-        {menuItems.map((item, index) => renderMenuItem(item, index))}
-      </List>
+      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+        <List>
+          {menuItems.map((item, index) => renderMenuItem(item, index))}
+        </List>
+      </Box>
 
       {/* Footer */}
       {!isCollapsed && (
-        <Box sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="caption" color="text.secondary">
-            © 2024 School Management System
-          </Typography>
-        </Box>
+        <>
+          <Divider />
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography variant="caption" color="text.secondary">
+              © 2024 School Management System
+            </Typography>
+          </Box>
+        </>
       )}
     </Box>
   );
-
-  if (isMobile) {
-    return (
-      <>
-        <IconButton
-          color="primary"
-          aria-label="open sidebar"
-          onClick={() => setIsMobileSidebarOpen(true)}
-          sx={{ position: 'fixed', top: 10, left: 10, zIndex: 1000 }}
-        >
-          <MenuIcon />
-        </IconButton>
-        {isMobileSidebarOpen && (
-          <Box
-            sx={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              bgcolor: 'rgba(0,0,0,0.5)',
-              zIndex: 999,
-            }}
-            onClick={() => setIsMobileSidebarOpen(false)}
-          >
-            <Box
-              sx={{
-                width: 250,
-                height: '100%',
-                bgcolor: 'background.paper',
-                overflowY: 'auto',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <IconButton
-                color="primary"
-                aria-label="close sidebar"
-                onClick={() => setIsMobileSidebarOpen(false)}
-                sx={{ position: 'absolute', top: 10, right: 10 }}
-              >
-                <CloseIcon />
-              </IconButton>
-              {sidebarContent}
-            </Box>
-          </Box>
-        )}
-      </>
-    );
-  }
-
-  return sidebarContent;
 }
 
 export default Sidebar;
