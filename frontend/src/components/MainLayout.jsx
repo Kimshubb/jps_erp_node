@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Box, CircularProgress, Alert, IconButton, useTheme, useMediaQuery, Drawer } from '@mui/material';
-//import MenuIcon from '@mui/icons-material/Menu';
-//import CloseIcon from '@mui/icons-material/Close';
 import Sidebar from './Sidebar';
 import Topbar from './TopBar';
 import axiosInstance from '../utils/axiosInstance';
 
-// Breakpoint constants
 const SIDEBAR_WIDTH = 280;
 const SIDEBAR_WIDTH_COLLAPSED = 64;
-const MOBILE_BREAKPOINT = 'md'; // Material-UI's medium breakpoint (960px)
+const MOBILE_BREAKPOINT = 'md';
 
 const MainLayout = ({ children }) => {
     const theme = useTheme();
@@ -94,9 +91,9 @@ const MainLayout = ({ children }) => {
 
     const sidebarWidth = isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH;
 
-   return (
-        <Box sx ={{ display: 'flex', minHeight: '100vh' }}>
-            {/* Mobile Sidebar */}
+    return (
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+            {/* Mobile Sidebar - remains the same */}
             {isMobile ? (
                 <Drawer
                     variant="temporary"
@@ -107,9 +104,9 @@ const MainLayout = ({ children }) => {
                         '& .MuiDrawer-paper': {
                             width: SIDEBAR_WIDTH,
                             boxSizing: 'border-box',
-                            bgcolor: 'background.paper', // Ensure drawer has background
-                            '& .sidebar-container': {    // Apply sidebar styles to drawer
-                                position: 'relative',    // Override fixed position in drawer
+                            bgcolor: 'background.paper',
+                            '& .sidebar-container': {
+                                position: 'relative',
                                 width: '100%',
                                 height: '100%'
                             }
@@ -123,47 +120,38 @@ const MainLayout = ({ children }) => {
                     />
                 </Drawer>
             ) : (
-                /* Desktop Sidebar */
-                <Box
-                    component="nav"
+                /* Desktop Sidebar - updated transition */
+                <Drawer
+                    variant="permanent"
                     sx={{
                         width: sidebarWidth,
                         flexShrink: 0,
-                        transition: theme.transitions.create('width', {
-                            easing: theme.transitions.easing.sharp,
-                            duration: theme.transitions.duration.enteringScreen,
-                        }),
+                        '& .MuiDrawer-paper': {
+                            width: sidebarWidth,
+                            boxSizing: 'border-box',
+                            bgcolor: 'background.paper',
+                            overflowX: 'hidden',
+                            transition: theme.transitions.create('width', {
+                                easing: theme.transitions.easing.sharp,
+                                duration: theme.transitions.duration.standard,
+                            }),
+                            '& .sidebar-container': {
+                                position: 'relative',
+                                width: '100%'
+                            }
+                        },
                     }}
+                    open
                 >
-                    <Drawer
-                        variant="permanent"
-                        sx={{
-                            '& .MuiDrawer-paper': {
-                                width: sidebarWidth,
-                                boxSizing: 'border-box',
-                                bgcolor: 'background.paper',
-                                transition: theme.transitions.create('width', {
-                                    easing: theme.transitions.easing.sharp,
-                                    duration: theme.transitions.duration.enteringScreen,
-                                }),
-                                '& .sidebar-container': {
-                                    position: 'relative',
-                                    width: '100%'
-                                }
-                            },
-                        }}
-                        open
-                    >
-                        <Sidebar
-                            schoolName={schoolName}
-                            isCollapsed={isCollapsed}
-                            onCollapse={handleCollapse}
-                        />
-                    </Drawer>
-                </Box>
+                    <Sidebar
+                        schoolName={schoolName}
+                        isCollapsed={isCollapsed}
+                        onCollapse={handleCollapse}
+                    />
+                </Drawer>
             )}
 
-            {/* Main Content Wrapper */}
+            {/* Main Content Wrapper - updated margins and transitions */}
             <Box
                 component="main"
                 sx={{
@@ -171,21 +159,21 @@ const MainLayout = ({ children }) => {
                     minHeight: '100vh',
                     display: 'flex',
                     flexDirection: 'column',
-                    width: { 
+                    width: {
                         xs: '100%',
-                        [MOBILE_BREAKPOINT]: `calc(100% - ${sidebarWidth}px)` 
+                        [MOBILE_BREAKPOINT]: `calc(100% - ${sidebarWidth}px)`
                     },
-                    ml: { 
+                    marginLeft: {
                         xs: 0,
-                        [MOBILE_BREAKPOINT]: `${sidebarWidth}px`
+                        [MOBILE_BREAKPOINT]: 0  // Remove default margin
                     },
                     transition: theme.transitions.create(['margin', 'width'], {
                         easing: theme.transitions.easing.sharp,
-                        duration: theme.transitions.duration.enteringScreen,
+                        duration: theme.transitions.duration.standard,
                     }),
                 }}
             >
-                {/* Topbar */}
+                {/* Topbar - updated to adjust with sidebar */}
                 <Topbar 
                     user={user}
                     currentTerm={currentTerm}
@@ -197,51 +185,39 @@ const MainLayout = ({ children }) => {
                         zIndex: 1100,
                         backgroundColor: 'background.paper',
                         borderBottom: 1,
-                        borderColor: 'divider'
+                        borderColor: 'divider',
+                        width: '100%',
+                        transition: theme.transitions.create(['width', 'margin'], {
+                            easing: theme.transitions.easing.sharp,
+                            duration: theme.transitions.duration.standard,
+                        }),
+                        ...(isCollapsed && {
+                            marginLeft: SIDEBAR_WIDTH_COLLAPSED,
+                            width: `calc(100% - ${SIDEBAR_WIDTH_COLLAPSED}px)`
+                        }),
+                        ...(!isCollapsed && {
+                            marginLeft: SIDEBAR_WIDTH,
+                            width: `calc(100% - ${SIDEBAR_WIDTH}px)`
+                        })
                     }}
                 />
-                
-                {/* Scrollable Content Container */}
-                <Box
-                    sx={{
-                        flexGrow: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden',
-                        position: 'relative'
-                    }}
-                >
-                    {/* Content Area */}
+
+                {/* Content area remains the same */}
+                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
                     <Box
                         sx={{
                             flexGrow: 1,
                             overflow: 'auto',
                             height: '100%',
-                            // Responsive padding
-                            p: {
-                                xs: 1,  // 8px padding on mobile
-                                sm: 2,  // 16px padding on tablet
-                                md: 3   // 24px padding on desktop
-                            },
-                            // Maximum width constraint
-                            maxWidth: {
-                                lg: '1440px',
-                                xl: '1600px'
-                            },
-                            // Center content if width is less than max-width
+                            p: { xs: 1, sm: 2, md: 3 },
+                            maxWidth: { lg: '1440px', xl: '1600px' },
                             mx: 'auto',
                             width: '100%',
-                            // Minimum width to prevent squishing
-                            minWidth: {
-                                xs: '300px',
-                                sm: '400px'
-                            },
-                            // Background and spacing
+                            minWidth: { xs: '300px', sm: '400px' },
                             backgroundColor: 'background.default',
                             boxSizing: 'border-box',
                         }}
                     >
-                        {/* Actual page content */}
                         <Box
                             sx={{
                                 minHeight: '100%',
