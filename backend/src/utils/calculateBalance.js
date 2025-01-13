@@ -17,7 +17,7 @@ const fetchBalanceData = async (studentId, termId) => {
       select: {
         cfBalance: true,
         gradeId: true,
-        schoolId: true, // Include schoolId
+        schoolId: true,
       },
     });
   
@@ -27,19 +27,26 @@ const fetchBalanceData = async (studentId, termId) => {
   
     const { cfBalance, gradeId, schoolId } = student;
   
-    // Fetch Fee Structure specific to the grade, term, and school
+    // Fetch Fee Structure for the grade, term, and school
     const feeStructure = await prisma.feeStructure.findFirst({
-      where: { gradeId, termId, schoolId },
+      where: { schoolId, gradeId, termId },
     });
   
-    const standardFees =
-      (feeStructure?.tuitionFee || 0) +
-      (feeStructure?.assBooks || 0) +
-      (feeStructure?.diaryFee || 0) +
-      (feeStructure?.activityFee || 0) +
-      (feeStructure?.others || 0);
+    if (!feeStructure) {
+      console.error('No Fee Structure found for:', { schoolId, gradeId, termId });
+      return { cfBalance, standardFees: 0, additionalFees: 0, paidAmount: 0 };
+    }
   
-    // Fetch Additional Fees specific to the student and school
+    console.log('Fee Structure:', feeStructure);
+  
+    const standardFees =
+      (feeStructure.tuitionFee || 0) +
+      (feeStructure.assBooks || 0) +
+      (feeStructure.diaryFee || 0) +
+      (feeStructure.activityFee || 0) +
+      (feeStructure.others || 0);
+  
+    // Fetch Additional Fees
     const additionalFeesTotal = await prisma.additionalFee.aggregate({
       where: {
         schoolId,
@@ -48,7 +55,7 @@ const fetchBalanceData = async (studentId, termId) => {
       _sum: { amount: true },
     })._sum?.amount || 0;
   
-    // Fetch Payments specific to the student, term, and school
+    // Fetch Payments for the term
     const termPayments = await prisma.feePayment.aggregate({
       where: { studentId, termId, schoolId },
       _sum: { amount: true },
@@ -56,13 +63,13 @@ const fetchBalanceData = async (studentId, termId) => {
   
     const paidAmount = termPayments._sum?.amount || 0;
   
-    // Debug logs to verify queries
     console.log('Student:', student);
-    console.log('Fee Structure:', feeStructure);
+    console.log('Standard Fees:', standardFees);
     console.log('Additional Fees Total:', additionalFeesTotal);
     console.log('Term Payments:', termPayments);
   
     return { cfBalance, standardFees, additionalFees: additionalFeesTotal, paidAmount };
   };
+  
   
 module.exports = { calculateBalance, fetchBalanceData };
