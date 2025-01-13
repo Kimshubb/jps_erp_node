@@ -46,7 +46,7 @@ const fetchBalanceData = async (studentId, termId) => {
         students: { some: { id: studentId } },
       },
       _sum: { amount: true },
-    })._sum.amount || 0;
+    })._sum?.amount || 0;
   
     // Fetch Payments specific to the student, term, and school
     const termPayments = await prisma.feePayment.aggregate({
@@ -54,9 +54,15 @@ const fetchBalanceData = async (studentId, termId) => {
       _sum: { amount: true },
     });
   
-    const paidAmount = termPayments._sum.amount || 0;
+    const paidAmount = termPayments._sum?.amount || 0;
+  
+    // Debug logs to verify queries
+    console.log('Student:', student);
+    console.log('Fee Structure:', feeStructure);
+    console.log('Additional Fees Total:', additionalFeesTotal);
+    console.log('Term Payments:', termPayments);
   
     return { cfBalance, standardFees, additionalFees: additionalFeesTotal, paidAmount };
   };
-
+  
 module.exports = { calculateBalance, fetchBalanceData };
