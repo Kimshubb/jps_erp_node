@@ -93,7 +93,7 @@ const MainLayout = ({ children }) => {
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-            {/* Mobile Sidebar - remains the same */}
+            {/* Mobile Sidebar */}
             {isMobile ? (
                 <Drawer
                     variant="temporary"
@@ -102,14 +102,9 @@ const MainLayout = ({ children }) => {
                     ModalProps={{ keepMounted: true }}
                     sx={{
                         '& .MuiDrawer-paper': {
-                            width: SIDEBAR_WIDTH,
+                            width: SIDEBAR_WIDTH.expanded,
                             boxSizing: 'border-box',
                             bgcolor: 'background.paper',
-                            '& .sidebar-container': {
-                                position: 'relative',
-                                width: '100%',
-                                height: '100%'
-                            }
                         },
                     }}
                 >
@@ -120,25 +115,21 @@ const MainLayout = ({ children }) => {
                     />
                 </Drawer>
             ) : (
-                /* Desktop Sidebar - updated transition */
+                /* Desktop Sidebar */
                 <Drawer
                     variant="permanent"
                     sx={{
-                        width: sidebarWidth,
+                        width: isCollapsed ? SIDEBAR_WIDTH.collapsed : SIDEBAR_WIDTH.expanded,
                         flexShrink: 0,
                         '& .MuiDrawer-paper': {
-                            width: sidebarWidth,
+                            width: isCollapsed ? SIDEBAR_WIDTH.collapsed : SIDEBAR_WIDTH.expanded,
                             boxSizing: 'border-box',
                             bgcolor: 'background.paper',
                             overflowX: 'hidden',
                             transition: theme.transitions.create('width', {
                                 easing: theme.transitions.easing.sharp,
-                                duration: theme.transitions.duration.standard,
+                                duration: theme.transitions.duration.enteringScreen,
                             }),
-                            '& .sidebar-container': {
-                                position: 'relative',
-                                width: '100%'
-                            }
                         },
                     }}
                     open
@@ -151,7 +142,7 @@ const MainLayout = ({ children }) => {
                 </Drawer>
             )}
 
-            {/* Main Content Wrapper - updated margins and transitions */}
+            {/* Main Content Area */}
             <Box
                 component="main"
                 sx={{
@@ -159,61 +150,42 @@ const MainLayout = ({ children }) => {
                     minHeight: '100vh',
                     display: 'flex',
                     flexDirection: 'column',
-                    width: {
-                        xs: '100%',
-                        [MOBILE_BREAKPOINT]: `calc(100% - ${sidebarWidth}px)`
-                    },
-                    marginLeft: {
-                        xs: 0,
-                        [MOBILE_BREAKPOINT]: 0  // Remove default margin
-                    },
+                    width: '100%',
                     transition: theme.transitions.create(['margin', 'width'], {
                         easing: theme.transitions.easing.sharp,
-                        duration: theme.transitions.duration.standard,
+                        duration: theme.transitions.duration.enteringScreen,
                     }),
                 }}
             >
-                {/* Topbar - updated to adjust with sidebar */}
+                {/* Topbar with synchronized transitions */}
                 <Topbar 
                     user={user}
                     currentTerm={currentTerm}
+                    isCollapsed={isCollapsed}
                     onMenuClick={handleSidebarToggle}
                     showMenuIcon={isMobile}
-                    sx={{
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 1100,
-                        backgroundColor: 'background.paper',
-                        borderBottom: 1,
-                        borderColor: 'divider',
-                        width: '100%',
-                        transition: theme.transitions.create(['width', 'margin'], {
-                            easing: theme.transitions.easing.sharp,
-                            duration: theme.transitions.duration.standard,
-                        }),
-                        ...(isCollapsed && {
-                            marginLeft: SIDEBAR_WIDTH_COLLAPSED,
-                            width: `calc(100% - ${SIDEBAR_WIDTH_COLLAPSED}px)`
-                        }),
-                        ...(!isCollapsed && {
-                            marginLeft: SIDEBAR_WIDTH,
-                            width: `calc(100% - ${SIDEBAR_WIDTH}px)`
-                        })
-                    }}
+                    sidebarWidth={SIDEBAR_WIDTH}
                 />
 
-                {/* Content area remains the same */}
-                <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+                {/* Content Container */}
+                <Box
+                    sx={{
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        mt: '70px', // Account for fixed AppBar height
+                    }}
+                >
                     <Box
                         sx={{
                             flexGrow: 1,
                             overflow: 'auto',
-                            height: '100%',
-                            p: { xs: 1, sm: 2, md: 3 },
+                            p: { xs: 2, sm: 3 },
                             maxWidth: { lg: '1440px', xl: '1600px' },
                             mx: 'auto',
                             width: '100%',
-                            minWidth: { xs: '300px', sm: '400px' },
                             backgroundColor: 'background.default',
                             boxSizing: 'border-box',
                         }}
@@ -223,7 +195,7 @@ const MainLayout = ({ children }) => {
                                 minHeight: '100%',
                                 borderRadius: 1,
                                 backgroundColor: 'background.paper',
-                                p: { xs: 1, sm: 2 },
+                                p: { xs: 2, sm: 3 },
                                 boxShadow: 1
                             }}
                         >
