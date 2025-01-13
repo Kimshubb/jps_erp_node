@@ -529,6 +529,29 @@ const exportPayments = async (req, res) => {
     }
 };
 
+const feeReports = async (req, res) => {
+    const schoolId = req.user.schoolId;
+    const schoolDataService = new SchoolDataService(schoolId);
+    
+    try {
+        // Get all fee report data using the service
+        const reportData = await schoolDataService.getFeeReportData();
+
+        return res.json({
+            success: true,
+            data: reportData
+        });
+
+    } catch (error) {
+        console.error('Error generating fee reports:', error);
+        return res.status(error.message.includes('No active term') ? 400 : 500).json({ 
+            success: false,
+            message: error.message || 'An error occurred while generating fee reports.',
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+};
+
 /*
 // Fetches student payments with balance and carry-forward balance for the current term.
 // GET /api/payments/student_payments
@@ -944,4 +967,4 @@ const addAdditionalFee = async (req, res) => {
     }
 };*/
 
-module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments, getAllPayments, exportPayments/* feeReports, searchStudentPayments, addAdditionalFee*/ };
+module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments, getAllPayments, exportPayments, feeReports/* searchStudentPayments, addAdditionalFee*/ };

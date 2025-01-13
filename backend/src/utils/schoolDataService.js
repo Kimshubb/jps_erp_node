@@ -323,6 +323,253 @@ class SchoolDataService {
             throw new Error('Failed to fetch registration options');
         }
     }
+    /**
+     * Get fee report data for all grades in the current term
+     * @returns {Promise<Object>} Complete fee report data
+     */
+    async getFeeReportData() {
+        try {
+            const currentTerm = await this.getCurrentTerm();
+            const previousTerm = await this.getPreviousTerm(currentTerm.startDate);
+
+            const [
+                gradeDetails,
+                paymentMethodComparison,
+                termComparison,
+                additionalFeesComparison
+            ] = await Promise.all([
+                this.getGradeDetailsWithFees(currentTerm.id),
+                this.getPaymentMethodComparison(currentTerm.id, previousTerm?.id),
+                this.getTermComparison(currentTerm.id, previousTerm?.id),
+                this.getAdditionalFeesComparison()
+            ]);
+
+            return {
+                gradeDetails,
+                paymentMethodComparison,
+                termComparison,
+                additionalFeesComparison
+            };
+        } catch (error) {
+            console.error('Error generating fee report data:', error);
+            throw new Error('Failed to generate fee report data');
+        }
+    }
+
+    /**
+     * Get detailed fee information for all grades
+     * @param {number} termId 
+     * @returns {Promise<Array>} Grade details with fees
+     */
+    async getGradeDetailsWithFees(termId) {
+        const grades = await prisma.grade.findMany({
+            where: { schoolId: this.schoolId },
+            include: {
+                feeStructure: {
+                    where: { termId }
+                }
+            }
+        });
+
+        return Promise.all(grades.map(async (grade) => {
+            const [feeStructure, additionalFees, payments] = await Promise.all([
+                grade.feeStructure[0], // From the included relation
+                this.getGradeAdditionalFees(grade.id),
+                this.getGradePayments(grade.id, termId)
+            ]);
+
+            const basicFees = feeStructure ? {
+                tuitionFee: feeStructure.tuitionFee,
+                assBooks: feeStructure.assBooks,
+                diaryFee: feeStructure.diaryFee,
+                activityFee: feeStructure.activityFee,
+                others: feeStructure.others,
+                total: feeStructure.tuitionFee + 
+                       feeStructure.assBooks + 
+                       feeStructure.diaryFee + 
+                       feeStructure.activityFee + 
+                       feeStructure.others
+            } : { total: 0 };
+
+            return {
+                gradeId: grade.id,
+                gradeName: grade.name,
+                basicFees,
+                additionalFees,
+                payments: {
+                    total: payments.reduce((sum, payment) => sum + payment.amount, 0),
+                    items: payments
+                }
+            };
+        }));
+    }
+
+    /**
+     * Get additional fees for a grade's students
+     * @param {number} gradeId 
+     * @returns {Promise<Object>} Additional fees breakdown
+     */
+    async getGradeAdditionalFees(gradeId) {
+        // Get students in the grade
+        const students = await prisma.student.findMany({
+            where: { gradeId },
+            include: {
+                additionalFees: true
+            }
+        });
+
+        // Aggregate all additional fees
+        const feesMap = new Map();
+        students.forEach(student => {
+            student.additionalFees.forEach(fee => {
+                if (!feesMap.has(fee.feeName)) {
+                    feesMap.set(fee.feeName, {
+                        name: fee.feeName,
+                        amount: fee.amount,
+                        count: 1
+                    });
+                } else {
+                    const existing = feesMap.get(fee.feeName);
+                    existing.count += 1;
+                }
+            });
+        });
+
+        return {
+            items: Array.from(feesMap.values()),
+            total: Array.from(feesMap.values())
+                .reduce((sum, fee) => sum + (fee.amount * fee.count), 0)
+        };
+    }
+
+    /**
+     * Get payments for a specific grade in a term
+     * @param {number} gradeId 
+     * @param {number} termId 
+     * @returns {Promise<Array>} Payments
+     */
+    async getGradePayments(gradeId, termId) {
+        return prisma.feePayment.findMany({
+            where: {
+                termId,
+                student: {
+                    gradeId
+                },
+                schoolId: this.schoolId
+            },
+            include: {
+                mpesaTransaction: {
+                    select: {
+                        verified: true
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Compare payment methods between terms
+     * @param {number} currentTermId 
+     * @param {number|null} previousTermId 
+     * @returns {Promise<Object>} Payment method comparison
+     */
+    async getPaymentMethodComparison(currentTermId, previousTermId) {
+        const methods = ['MPESA', 'CASH', 'BANK'];
+        const comparison = {};
+
+        for (const method of methods) {
+            const [current, previous] = await Promise.all([
+                prisma.feePayment.aggregate({
+                    where: {
+                        schoolId: this.schoolId,
+                        termId: currentTermId,
+                        method
+                    },
+                    _sum: { amount: true }
+                }),
+                previousTermId ? prisma.feePayment.aggregate({
+                    where: {
+                        schoolId: this.schoolId,
+                        termId: previousTermId,
+                        method
+                    },
+                    _sum: { amount: true }
+                }) : Promise.resolve({ _sum: { amount: 0 } })
+            ]);
+
+            comparison[method] = {
+                current: current._sum.amount || 0,
+                previous: previous._sum.amount || 0
+            };
+        }
+
+        return comparison;
+    }
+
+    /**
+     * Compare additional fees
+     * @returns {Promise<Object>} Additional fees summary
+     */
+    async getAdditionalFeesComparison() {
+        const additionalFees = await prisma.additionalFee.findMany({
+            where: {
+                schoolId: this.schoolId
+            },
+            include: {
+                _count: {
+                    select: { students: true }
+                }
+            }
+        });
+
+        return additionalFees.reduce((summary, fee) => {
+            summary[fee.feeName] = {
+                amount: fee.amount,
+                studentCount: fee._count.students
+            };
+            return summary;
+        }, {});
+    }
+
+    /**
+     * Get term comparison data
+     * @param {number} currentTermId 
+     * @param {number|null} previousTermId 
+     * @returns {Promise<Object>} Term comparison
+     */
+    async getTermComparison(currentTermId, previousTermId) {
+        const [currentPayments, previousPayments] = await Promise.all([
+            prisma.feePayment.aggregate({
+                where: {
+                    schoolId: this.schoolId,
+                    termId: currentTermId
+                },
+                _sum: { amount: true },
+                _avg: { balance: true }
+            }),
+            previousTermId ? prisma.feePayment.aggregate({
+                where: {
+                    schoolId: this.schoolId,
+                    termId: previousTermId
+                },
+                _sum: { amount: true },
+                _avg: { balance: true }
+            }) : Promise.resolve({ _sum: { amount: 0 }, _avg: { balance: 0 } })
+        ]);
+
+        return {
+            currentTerm: {
+                totalPayments: currentPayments._sum.amount || 0,
+                averageBalance: currentPayments._avg.balance || 0
+            },
+            previousTerm: {
+                totalPayments: previousPayments._sum.amount || 0,
+                averageBalance: previousPayments._avg.balance || 0
+            },
+            change: previousPayments._sum.amount ? 
+                ((currentPayments._sum.amount - previousPayments._sum.amount) / previousPayments._sum.amount) * 100 : 0
+        };
+    }
 }
 
 module.exports = SchoolDataService;
