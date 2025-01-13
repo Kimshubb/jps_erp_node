@@ -1,4 +1,12 @@
 // src/seedutils/seedInitialTeachers.js
+// Path: backend/src/seedutils/seedInitialTeachers.js
+// to run this script, run the following command in the terminal:
+// node src/seedutils/seedInitialTeachers.js <schoolId>
+// Example: node src/seedutils/seedInitialTeachers.js 1
+// This script seeds teachers for a school based on the number of streams in each grade. It calculates the number of teachers needed to cover all streams and seeds them accordingly.
+// The default password for all seeded teachers is 'defaultPassword123'. This should be changed immediately after login.
+
+require('dotenv').config();
 const prisma = require('../utils/prismaClient');
 const bcrypt = require('bcrypt');
 

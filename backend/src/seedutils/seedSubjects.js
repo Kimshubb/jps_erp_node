@@ -1,3 +1,4 @@
+
 const prisma = require('../utils/prismaClient');
 
 const seedSubjects = async (prisma, schoolId) => {

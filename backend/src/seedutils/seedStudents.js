@@ -2,6 +2,8 @@
 //run this script to populate students in the database
 // Usage: node src/seedutils/seedStudents.js <schoolId> <studentsPerGrade>
 // Example: node src/seedutils/seedStudents.js 1 5
+require('dotenv').config();
+console.log('Database URL:', process.env.DATABASE_URL);
 const prisma = require('../utils/prismaClient');
 
 const generateRandomName = (gender) => {

@@ -1,4 +1,11 @@
+// Seed fee structures for a specific school
+//  - Generates random fee structures for each grade in the school
+//  - Fee components are calculated based on grade level
+//  - Requires a valid school ID as an argument
+//  - Run this script with the command `node seedFeeStructures.js <schoolId>`
+//  - Example: `node seedFeeStructures.js 1`
 // src/seedutils/seedFeeStructures.js
+require('dotenv').config();
 const prisma = require('../utils/prismaClient');
 
 /**

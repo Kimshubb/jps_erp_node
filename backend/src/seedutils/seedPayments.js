@@ -1,3 +1,12 @@
+// Seed student payments for a school
+//  - Generates random payments for students in the school
+//  - Randomly assigns payment methods and amounts
+//  - Randomly assigns payment dates within the current term
+//  - Updates student balance after each payment
+//  - Requires a valid school ID as an argument
+//  - Run this script with the command `node seedPayments.js <schoolId>`
+//  - Example: `node seedPayments.js 1`
+require('dotenv').config();
 const prisma = require('../utils/prismaClient');
 const { randomUUID } = require('crypto');
 
