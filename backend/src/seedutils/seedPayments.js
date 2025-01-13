@@ -59,6 +59,7 @@ const populateStudentPayments = async (schoolId) => {
     for (const student of students) {
       // Fetch balance data for the student
       const balanceData = await fetchBalanceData(student.id, currentTerm.id);
+      console.log(balanceData);
       let updatedBalance = balanceData.cfBalance;
 
       // Randomly generate payments for the student
