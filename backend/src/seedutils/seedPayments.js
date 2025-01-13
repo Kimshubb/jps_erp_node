@@ -1,6 +1,6 @@
 require('dotenv').config();
 const prisma = require('../utils/prismaClient');
-const { fetchBalanceData, calculateBalance } = require('../utils/balanceUtils'); // Import utilities
+const { fetchBalanceData, calculateBalance } = require('../utils/calculateBalance'); // Import utilities
 const { randomUUID } = require('crypto');
 
 const generatePaymentMethod = () => {
