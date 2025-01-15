@@ -86,12 +86,12 @@ model FeeStructure {
   others      Float
   schoolId    Int    @map("school_id")
   termId      Int    @map("term_id")
-  gradeId     Int    @unique @map("grade_id")
+  gradeId     Int    @map("grade_id")
   school      School @relation(fields: [schoolId], references: [id])
   term        Term   @relation(fields: [termId], references: [id])
   grade       Grade  @relation(fields: [gradeId], references: [id])
-
-  @@unique([schoolId, gradeId], name: "unique_school_grade")
+  
+  @@unique([schoolId, gradeId, termId], name: "unique_school_grade_term")
 }
 
 model AdditionalFee {
