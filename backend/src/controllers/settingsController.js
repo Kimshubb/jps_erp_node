@@ -103,7 +103,7 @@ const manageFeeStructure = async (req, res) => {
 
             const feeStructures = await prisma.feeStructure.findMany({
                 where: feeStructuresQuery,
-                include: { grade: true, term: true },
+                include: { grade: true, term: true }, // Include grade and term details
             });
 
             res.json({ success: true, feeStructures });
@@ -121,16 +121,32 @@ const manageFeeStructure = async (req, res) => {
         const { fee_structure_id, grade, term_id, tuition_fee, ass_books, diary_fee, activity_fee, others } = req.body;
 
         try {
+            // Validate term and grade
             const term = await prisma.term.findUnique({ where: { id: parseInt(term_id) } });
             const gradeExists = await prisma.grade.findUnique({ where: { id: parseInt(grade) } });
 
             if (!term) return res.status(400).json({ success: false, error: 'Invalid term.' });
             if (!gradeExists) return res.status(400).json({ success: false, error: 'Invalid grade.' });
 
+            // Update existing fee structure
             if (fee_structure_id) {
                 let feeStructure = await prisma.feeStructure.findUnique({ where: { id: parseInt(fee_structure_id) } });
                 if (!feeStructure) {
                     return res.status(404).json({ success: false, error: 'Fee structure not found.' });
+                }
+
+                // Check if the update would violate the uniqueness constraint
+                const conflictingFeeStructure = await prisma.feeStructure.findFirst({
+                    where: {
+                        NOT: { id: parseInt(fee_structure_id) }, // Exclude the current fee structure
+                        gradeId: parseInt(grade),
+                        termId: parseInt(term_id),
+                        schoolId,
+                    },
+                });
+
+                if (conflictingFeeStructure) {
+                    return res.status(400).json({ success: false, error: 'Fee structure for this grade and term already exists.' });
                 }
 
                 feeStructure = await prisma.feeStructure.update({
@@ -147,30 +163,31 @@ const manageFeeStructure = async (req, res) => {
                 });
 
                 return res.json({ success: true, message: 'Fee structure updated successfully!', feeStructure });
-            } else {
-                const existingFeeStructure = await prisma.feeStructure.findFirst({
-                    where: { gradeId: parseInt(grade), termId: parseInt(term_id), schoolId },
-                });
-
-                if (existingFeeStructure) {
-                    return res.status(400).json({ success: false, error: 'Fee structure for this grade and term already exists.' });
-                }
-
-                const feeStructure = await prisma.feeStructure.create({
-                    data: {
-                        gradeId: parseInt(grade),
-                        termId: parseInt(term_id),
-                        tuitionFee: parseFloat(tuition_fee),
-                        assBooks: parseFloat(ass_books),
-                        diaryFee: parseFloat(diary_fee),
-                        activityFee: parseFloat(activity_fee),
-                        others: parseFloat(others || 0),
-                        schoolId,
-                    },
-                });
-
-                res.json({ success: true, message: 'Fee structure created successfully!', feeStructure });
             }
+
+            // Create new fee structure
+            const existingFeeStructure = await prisma.feeStructure.findFirst({
+                where: { gradeId: parseInt(grade), termId: parseInt(term_id), schoolId },
+            });
+
+            if (existingFeeStructure) {
+                return res.status(400).json({ success: false, error: 'Fee structure for this grade and term already exists.' });
+            }
+
+            const feeStructure = await prisma.feeStructure.create({
+                data: {
+                    gradeId: parseInt(grade),
+                    termId: parseInt(term_id),
+                    tuitionFee: parseFloat(tuition_fee),
+                    assBooks: parseFloat(ass_books),
+                    diaryFee: parseFloat(diary_fee),
+                    activityFee: parseFloat(activity_fee),
+                    others: parseFloat(others || 0),
+                    schoolId,
+                },
+            });
+
+            res.json({ success: true, message: 'Fee structure created successfully!', feeStructure });
         } catch (error) {
             if (error.code === 'P2002') {
                 return res.status(400).json({ success: false, error: 'Fee structure already exists.' });
@@ -178,9 +195,10 @@ const manageFeeStructure = async (req, res) => {
             console.error('Error managing fee structure:', error);
             res.status(500).json({ success: false, error: 'Unable to manage fee structure.' });
         }
+    } else {
+        res.status(405).json({ success: false, error: 'Method not allowed.' });
     }
 };
-
 
 const createAdditionalFee = async (req, res) => {
     const { feeName, amount } = req.body;
