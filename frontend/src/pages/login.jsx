@@ -69,9 +69,9 @@ const Login = ({ setAuthToken }) => {
             console.error('Login error:', error);
             
             // Enhanced error handling
-            if (error.response?.data?.message) {
-                setError(error.response.data.message);
-            } else if (error.response?.status === 401) {
+            if (error.response?.data?.code === 'USER_NOT_FOUND') {
+                setError('The username does not exist! Please register first.');
+            } else if (error.response?.code === 'INVALID_PASSWORD') {
                 setError('Invalid username or password');
             } else if (error.response?.status === 429) {
                 setError('Too many login attempts. Please try again later.');
