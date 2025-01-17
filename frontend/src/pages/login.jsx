@@ -1,6 +1,6 @@
 // src/pages/login.js
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axiosInstance from '../utils/axiosInstance';
 import { 
     Box, 
@@ -14,10 +14,21 @@ import {
 
 const Login = ({ setAuthToken }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+
+    // Handle any returnUrl or error messages from redirects
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const errorMessage = params.get('error');
+        
+        if (errorMessage === 'session_expired') {
+            setError('Your session has expired. Please log in again.');
+        }
+    }, [location]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -25,40 +36,60 @@ const Login = ({ setAuthToken }) => {
         setError(null);
 
         try {
-            //clear existing tokens
+            // Clear existing auth data
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            setAuthToken(null);
 
             const response = await axiosInstance.post('/api/auth/login', {
                 username,
                 password
             });
-            console.log(response.data.token);
 
             if (response.data.token) {
+                // Store auth data
                 localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user', JSON.stringify(response.data.user));
-                //update auth state
                 setAuthToken(response.data.token);
 
-                console.log('Token received and stored:', response.data.token);
-                console.log('stored user:', response.data.user);
-
-                navigate('/dashboard');
+                // Handle redirect
+                const params = new URLSearchParams(location.search);
+                const returnUrl = params.get('returnUrl');
+                
+                // If there's a return URL and it's not the login page itself
+                if (returnUrl && !returnUrl.includes('/login')) {
+                    navigate(returnUrl);
+                } else {
+                    navigate('/dashboard');
+                }
             } else {
                 throw new Error('No token received');
             }
         } catch (error) {
-            console.error('Login error details:', error);
-            setError(error.response?.data?.message || 'Login failed');
-            //clear any stored incomplete data
+            console.error('Login error:', error);
+            
+            // Enhanced error handling
+            if (error.response?.data?.message) {
+                setError(error.response.data.message);
+            } else if (error.response?.status === 401) {
+                setError('Invalid username or password');
+            } else if (error.response?.status === 429) {
+                setError('Too many login attempts. Please try again later.');
+            } else {
+                setError('Login failed. Please try again.');
+            }
+
+            // Clear any incomplete auth data
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-
+            setAuthToken(null);
         } finally {
             setLoading(false);
         }
     };
+
+    // Prevent form submission while loading
+    const isSubmitDisabled = loading || !username.trim() || !password.trim();
 
     return (
         <Container component="main" maxWidth="xs">
@@ -75,12 +106,21 @@ const Login = ({ setAuthToken }) => {
                 </Typography>
 
                 {error && (
-                    <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
+                    <Alert 
+                        severity="error" 
+                        sx={{ width: '100%', mt: 2 }}
+                        onClose={() => setError(null)}
+                    >
                         {error}
                     </Alert>
                 )}
 
-                <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+                <Box 
+                    component="form" 
+                    onSubmit={handleSubmit} 
+                    sx={{ mt: 1 }}
+                    noValidate
+                >
                     <TextField
                         margin="normal"
                         required
@@ -93,6 +133,10 @@ const Login = ({ setAuthToken }) => {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         disabled={loading}
+                        error={!!error}
+                        inputProps={{
+                            maxLength: 50
+                        }}
                     />
                     <TextField
                         margin="normal"
@@ -106,13 +150,17 @@ const Login = ({ setAuthToken }) => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={loading}
+                        error={!!error}
+                        inputProps={{
+                            maxLength: 100
+                        }}
                     />
                     <Button
                         type="submit"
                         fullWidth
                         variant="contained"
                         sx={{ mt: 3, mb: 2 }}
-                        disabled={loading}
+                        disabled={isSubmitDisabled}
                     >
                         {loading ? (
                             <CircularProgress size={24} color="inherit" />
