@@ -1,34 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { Box, CircularProgress, Alert, IconButton, useTheme, useMediaQuery, Drawer } from '@mui/material';
+import { Box, CircularProgress, Alert, useTheme, useMediaQuery, Drawer } from '@mui/material';
 import Sidebar from './Sidebar';
 import Topbar from './TopBar';
 import axiosInstance from '../utils/axiosInstance';
 
+// Constants
 const SIDEBAR_WIDTH = 280;
-const SIDEBAR_WIDTH_COLLAPSED = 64;
+const SIDEBAR_MINI_WIDTH = 64;
 const MOBILE_BREAKPOINT = 'md';
+const TOPBAR_HEIGHT = 70;
 
 const MainLayout = ({ children }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down(MOBILE_BREAKPOINT));
     const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
-    
+
     const [schoolName, setSchoolName] = useState('');
     const [user, setUser] = useState(null);
     const [currentTerm, setCurrentTerm] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
-    const [isCollapsed, setIsCollapsed] = useState(isTablet);
+    const [isMiniVariant, setIsMiniVariant] = useState(
+        localStorage.getItem('sidebarMiniVariant') === 'true' || isTablet
+    );
 
     // Handle window resize
     useEffect(() => {
         const handleResize = () => {
             if (isMobile) {
                 setIsSidebarOpen(false);
+                setIsMiniVariant(false); // Always expanded on mobile
             } else {
                 setIsSidebarOpen(true);
-                setIsCollapsed(isTablet);
+                setIsMiniVariant(isTablet); // Mini variant on tablet, expanded on desktop
             }
         };
 
@@ -67,10 +72,10 @@ const MainLayout = ({ children }) => {
         setIsSidebarOpen(!isSidebarOpen);
     };
 
-    const handleCollapse = () => {
-        const newCollapsed = !isCollapsed;
-        setIsCollapsed(newCollapsed);
-        localStorage.setItem('sidebarCollapsed', newCollapsed.toString());
+    const handleMiniVariantToggle = () => {
+        const newMiniVariant = !isMiniVariant;
+        setIsMiniVariant(newMiniVariant);
+        localStorage.setItem('sidebarMiniVariant', newMiniVariant.toString());
     };
 
     if (loading) {
@@ -89,7 +94,7 @@ const MainLayout = ({ children }) => {
         );
     }
 
-    const sidebarWidth = isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH;
+    const sidebarWidth = isMiniVariant ? SIDEBAR_MINI_WIDTH : SIDEBAR_WIDTH;
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -102,7 +107,7 @@ const MainLayout = ({ children }) => {
                     ModalProps={{ keepMounted: true }}
                     sx={{
                         '& .MuiDrawer-paper': {
-                            width: SIDEBAR_WIDTH.expanded,
+                            width: SIDEBAR_WIDTH,
                             boxSizing: 'border-box',
                             bgcolor: 'background.paper',
                         },
@@ -110,12 +115,12 @@ const MainLayout = ({ children }) => {
                 >
                     <Sidebar
                         schoolName={schoolName}
-                        isCollapsed={false}
-                        onCollapse={handleCollapse}
+                        isMiniVariant={false} // Always expanded on mobile
+                        onMiniVariantToggle={handleMiniVariantToggle}
                     />
                 </Drawer>
             ) : (
-                /* Desktop Sidebar */
+                /* Desktop/Tab Sidebar */
                 <Drawer
                     variant="persistent"
                     open={isSidebarOpen}
@@ -125,19 +130,20 @@ const MainLayout = ({ children }) => {
                         '& .MuiDrawer-paper': {
                             width: sidebarWidth,
                             boxSizing: 'border-box',
-                            position: 'fixed',
-                            zIndex: theme.zIndex.drawer,
+                            overflowX: 'hidden', // Prevent horizontal scroll
                             transition: theme.transitions.create('width', {
                                 easing: theme.transitions.easing.sharp,
                                 duration: theme.transitions.duration.enteringScreen,
                             }),
+                            borderRight: 'none', // Remove border for seamless integration
+                            boxShadow: isMiniVariant ? 'none' : theme.shadows[4], // Elevation for expanded state
                         },
                     }}
                 >
                     <Sidebar
                         schoolName={schoolName}
-                        isCollapsed={isCollapsed}
-                        onCollapse={handleCollapse}
+                        isMiniVariant={isMiniVariant}
+                        onMiniVariantToggle={handleMiniVariantToggle}
                     />
                 </Drawer>
             )}
@@ -163,14 +169,15 @@ const MainLayout = ({ children }) => {
                     })
                 }}
             >
-                {/* Topbar with synchronized transitions */}
+                {/* Topbar */}
                 <Topbar 
                     user={user}
                     currentTerm={currentTerm}
-                    isCollapsed={isCollapsed}
+                    isMiniVariant={isMiniVariant}
                     onMenuClick={handleSidebarToggle}
-                    showMenuIcon={!isMobile}
+                    showMenuIcon={isMobile} // Show menu icon only on mobile
                     sidebarWidth={SIDEBAR_WIDTH}
+                    sx={{ height: TOPBAR_HEIGHT, pl: isMobile ? 2 : 3 }}
                 />
 
                 {/* Content Container */}
@@ -181,7 +188,7 @@ const MainLayout = ({ children }) => {
                         flexDirection: 'column',
                         overflow: 'hidden',
                         position: 'relative',
-                        mt: '70px', // Account for fixed AppBar height
+                        mt: `${TOPBAR_HEIGHT}px`, // Use TOPBAR_HEIGHT constant
                     }}
                 >
                     <Box

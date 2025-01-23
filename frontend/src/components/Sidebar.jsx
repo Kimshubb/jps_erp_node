@@ -29,9 +29,9 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon
 } from '@mui/icons-material';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-function Sidebar({ schoolName, isCollapsed, onCollapse }) {
+function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
   const [open, setOpen] = useState({
     students: false,
     fees: false,
@@ -39,10 +39,20 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
     teachers: false
   });
   const location = useLocation();
+  const navigate = useNavigate();
   const theme = useTheme();
 
   const handleClick = (section) => {
-    setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
+    if (isMiniVariant) {
+      // In mini variant, navigate to the first child route (if available)
+      const menuItem = menuItems.find((item) => item.label.toLowerCase() === section);
+      if (menuItem?.children?.[0]?.path) {
+        navigate(menuItem.children[0].path);
+      }
+    } else {
+      // In expanded state, toggle the collapsible section
+      setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
+    }
   };
 
   const menuItems = [
@@ -103,29 +113,29 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
           fontWeight: 'bold',
         }),
         color: 'inherit',
-        minHeight: isCollapsed && !isChild ? '48px' : 'auto',
-        justifyContent: isCollapsed ? 'center' : 'flex-start',
-        px: isCollapsed ? 1 : 2,
+        minHeight: isMiniVariant && !isChild ? '48px' : 'auto',
+        justifyContent: isMiniVariant ? 'center' : 'flex-start',
+        px: isMiniVariant ? 1 : 2,
       },
     };
 
     if (item.children) {
       return (
         <React.Fragment key={index}>
-          <Tooltip title={isCollapsed ? item.label : ''} placement="right">
+          <Tooltip title={isMiniVariant ? item.label : ''} placement="right">
             <ListItem 
               button 
               {...itemProps}
-              onClick={() => !isCollapsed && handleClick(item.label.toLowerCase())}
+              onClick={() => handleClick(item.label.toLowerCase())}
             >
               <ListItemIcon sx={{ 
                 color: 'inherit',
-                minWidth: isCollapsed ? 'auto' : 40,
-                mr: isCollapsed ? 0 : 2 
+                minWidth: isMiniVariant ? 'auto' : 40,
+                mr: isMiniVariant ? 0 : 2 
               }}>
                 {item.icon}
               </ListItemIcon>
-              {!isCollapsed && (
+              {!isMiniVariant && (
                 <>
                   <ListItemText primary={item.label} />
                   {open[item.label.toLowerCase()] ? <ExpandLess /> : <ExpandMore />}
@@ -133,7 +143,7 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
               )}
             </ListItem>
           </Tooltip>
-          {!isCollapsed && (
+          {!isMiniVariant && (
             <Collapse in={open[item.label.toLowerCase()]} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
                 {item.children.map((child, idx) => renderMenuItem(child, idx, true))}
@@ -145,7 +155,7 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
     }
 
     return (
-      <Tooltip title={isCollapsed ? item.label : ''} placement="right" key={index}>
+      <Tooltip title={isMiniVariant ? item.label : ''} placement="right" key={index}>
         <ListItem
           button
           component={Link}
@@ -154,12 +164,12 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
         >
           <ListItemIcon sx={{ 
             color: 'inherit',
-            minWidth: isCollapsed ? 'auto' : 40,
-            mr: isCollapsed ? 0 : 2 
+            minWidth: isMiniVariant ? 'auto' : 40,
+            mr: isMiniVariant ? 0 : 2 
           }}>
             {item.icon}
           </ListItemIcon>
-          {!isCollapsed && <ListItemText primary={item.label} />}
+          {!isMiniVariant && <ListItemText primary={item.label} />}
         </ListItem>
       </Tooltip>
     );
@@ -180,13 +190,13 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
       }}
     >
       {/* Header */}
-      {!isCollapsed && (
+      {!isMiniVariant && (
         <>
           <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6" noWrap component="div">
               {schoolName || 'School Name'}
             </Typography>
-            <IconButton onClick={onCollapse} size="small">
+            <IconButton onClick={onMiniVariantToggle} size="small">
               <ThemeIcon />
             </IconButton>
           </Box>
@@ -196,7 +206,7 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
 
       {/* Collapse Toggle Button */}
       <IconButton
-        onClick={onCollapse}
+        onClick={onMiniVariantToggle}
         sx={{
           position: 'absolute',
           right: -15,
@@ -211,7 +221,7 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
         }}
         size="small"
       >
-        {isCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+        {isMiniVariant ? <ChevronRightIcon /> : <ChevronLeftIcon />}
       </IconButton>
 
       {/* Menu Items */}
@@ -222,7 +232,7 @@ function Sidebar({ schoolName, isCollapsed, onCollapse }) {
       </Box>
 
       {/* Footer */}
-      {!isCollapsed && (
+      {!isMiniVariant && (
         <>
           <Divider />
           <Box sx={{ p: 2, textAlign: 'center' }}>

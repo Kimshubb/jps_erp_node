@@ -27,11 +27,6 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 
-const SIDEBAR_WIDTH = {
-  expanded: 300,
-  collapsed: 64
-};
-
 // Mock notifications - replace with your actual notifications data
 const mockNotifications = [
   {
@@ -75,7 +70,7 @@ const mockNotifications = [
 const Topbar = ({ 
   user, 
   currentTerm, 
-  isCollapsed, 
+  isMiniVariant, 
   onMenuClick,
   showMenuIcon,
   sidebarWidth
@@ -148,27 +143,28 @@ const Topbar = ({
       />
     </ListItem>
   );
+
   return (
     <AppBar 
-        position="fixed" 
-        color="inherit"
-        elevation={1}
-        sx={{ 
-            width: {
-                xs: '100%',
-                md: `calc(100% - ${isCollapsed ? sidebarWidth.collapsed : sidebarWidth.expanded}px)`
-            },
-            ml: {
-                xs: 0,
-                md: isCollapsed ? `${sidebarWidth.collapsed}px` : `${sidebarWidth.expanded}px`
-            },
-            transition: theme.transitions.create(['width', 'margin'], {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-            }),
-            bgcolor: 'background.paper',
-            zIndex: theme.zIndex.drawer + 1,
-        }}
+      position="fixed" 
+      color="inherit"
+      elevation={1}
+      sx={{ 
+        width: {
+          xs: '100%',
+          md: `calc(100% - ${isMiniVariant ? sidebarWidth.collapsed : sidebarWidth.expanded}px)`
+        },
+        ml: {
+          xs: 0,
+          md: isMiniVariant ? `${sidebarWidth.collapsed}px` : `${sidebarWidth.expanded}px`
+        },
+        transition: theme.transitions.create(['width', 'margin'], {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
+        bgcolor: 'background.paper',
+        zIndex: theme.zIndex.drawer + 1,
+      }}
     >
       <Toolbar sx={{ 
         justifyContent: 'space-between',
