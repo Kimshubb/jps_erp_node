@@ -17,7 +17,10 @@ const login = async (req, res) => {
         if (!user) {
             // User not found
             console.log(`User ${username} not found.`);
-            return res.status(401).json({ message: 'Invalid credentials.' });
+            return res.status(401).json({
+                code: 'USER_NOT_FOUND', 
+                message: 'Invalid credentials.' 
+            });
         }
 
         // Compare provided password with stored hashed password
@@ -26,7 +29,10 @@ const login = async (req, res) => {
         if (!isPasswordMatch) {
             // Passwords do not match
             console.log(`User ${username} entered an incorrect password.`);
-            return res.status(401).json({ message: 'Invalid credentials.' });
+            return res.status(401).json({
+                code: 'INVALID_PASSWORD', 
+                message: 'Invalid credentials.' 
+            });
         }
         const tokenPayload = {
             userId: user.id,

@@ -117,22 +117,22 @@ const MainLayout = ({ children }) => {
             ) : (
                 /* Desktop Sidebar */
                 <Drawer
-                    variant="permanent"
+                    variant="persistent"
+                    open={isSidebarOpen}
                     sx={{
-                        width: isCollapsed ? SIDEBAR_WIDTH.collapsed : SIDEBAR_WIDTH.expanded,
+                        width: sidebarWidth,
                         flexShrink: 0,
                         '& .MuiDrawer-paper': {
-                            width: isCollapsed ? SIDEBAR_WIDTH.collapsed : SIDEBAR_WIDTH.expanded,
+                            width: sidebarWidth,
                             boxSizing: 'border-box',
-                            bgcolor: 'background.paper',
-                            overflowX: 'hidden',
+                            position: 'fixed',
+                            zIndex: theme.zIndex.drawer,
                             transition: theme.transitions.create('width', {
                                 easing: theme.transitions.easing.sharp,
                                 duration: theme.transitions.duration.enteringScreen,
                             }),
                         },
                     }}
-                    open
                 >
                     <Sidebar
                         schoolName={schoolName}
@@ -155,6 +155,12 @@ const MainLayout = ({ children }) => {
                         easing: theme.transitions.easing.sharp,
                         duration: theme.transitions.duration.enteringScreen,
                     }),
+                    ...(isMobile ? {} : {
+                        marginLeft: isSidebarOpen ? `${sidebarWidth}px` : 0,
+                        width: isSidebarOpen 
+                            ? `calc(100% - ${sidebarWidth}px)` 
+                            : '100%'
+                    })
                 }}
             >
                 {/* Topbar with synchronized transitions */}
@@ -163,7 +169,7 @@ const MainLayout = ({ children }) => {
                     currentTerm={currentTerm}
                     isCollapsed={isCollapsed}
                     onMenuClick={handleSidebarToggle}
-                    showMenuIcon={isMobile}
+                    showMenuIcon={!isMobile}
                     sidebarWidth={SIDEBAR_WIDTH}
                 />
 
