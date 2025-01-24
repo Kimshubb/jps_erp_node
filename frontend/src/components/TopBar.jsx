@@ -172,18 +172,18 @@ const Topbar = ({
         px: { xs: 2, sm: 3 }
       }}>
         <Stack direction="row" spacing={2} alignItems="center">
+          {/* Toggle Button - Visible on all devices except mobile */}
           {showMenuIcon && (
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
               onClick={onMenuClick}
-              sx={{ display: { md: 'none' } }}
             >
               <MenuIcon />
             </IconButton>
           )}
-          
+
           {/* Notifications Badge */}
           <IconButton
             color="inherit"

@@ -10,7 +10,8 @@ import {
   Typography,
   IconButton,
   Tooltip,
-  useTheme
+  useTheme,
+  Drawer
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -31,7 +32,7 @@ import {
 } from '@mui/icons-material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
+const Sidebar = ({ schoolName, isMiniVariant, onMiniVariantToggle }) => {
   const [open, setOpen] = useState({
     students: false,
     fees: false,
@@ -176,35 +177,26 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
   };
 
   return (
-    <Box
-      className="sidebar-container"
+    <Drawer
+      variant="persistent"
+      open={true}
       sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        transition: theme.transitions.create(['width', 'margin'], {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
+        width: isMiniVariant ? SIDEBAR_MINI_WIDTH : SIDEBAR_WIDTH,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: isMiniVariant ? SIDEBAR_MINI_WIDTH : SIDEBAR_WIDTH,
+          boxSizing: 'border-box',
+          overflowX: 'hidden',
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          borderRight: 'none',
+          boxShadow: isMiniVariant ? 'none' : theme.shadows[4],
+        },
       }}
     >
-      {/* Header */}
-      {!isMiniVariant && (
-        <>
-          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6" noWrap component="div">
-              {schoolName || 'School Name'}
-            </Typography>
-            <IconButton onClick={onMiniVariantToggle} size="small">
-              <ThemeIcon />
-            </IconButton>
-          </Box>
-          <Divider />
-        </>
-      )}
-
-      {/* Collapse Toggle Button */}
+      {/* Toggle Button */}
       <IconButton
         onClick={onMiniVariantToggle}
         sx={{
@@ -224,26 +216,22 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
         {isMiniVariant ? <ChevronRightIcon /> : <ChevronLeftIcon />}
       </IconButton>
 
-      {/* Menu Items */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      {/* Sidebar Content */}
+      <Box sx={{ p: 2 }}>
+        {!isMiniVariant && (
+          <>
+            <Typography variant="h6" noWrap component="div">
+              {schoolName || 'School Name'}
+            </Typography>
+            <Divider />
+          </>
+        )}
         <List>
           {menuItems.map((item, index) => renderMenuItem(item, index))}
         </List>
       </Box>
-
-      {/* Footer */}
-      {!isMiniVariant && (
-        <>
-          <Divider />
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">
-              © 2024 School Management System
-            </Typography>
-          </Box>
-        </>
-      )}
-    </Box>
+    </Drawer>
   );
-}
+};
 
 export default Sidebar;
