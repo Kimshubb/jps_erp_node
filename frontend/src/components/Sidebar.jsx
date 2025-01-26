@@ -10,7 +10,8 @@ import {
   Typography,
   IconButton,
   Tooltip,
-  useTheme
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,

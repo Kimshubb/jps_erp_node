@@ -27,6 +27,7 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 
+
 // Mock notifications - replace with your actual notifications data
 const mockNotifications = [
   {
