@@ -17,7 +17,7 @@ const UsersManagement = () => {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await axiosInstance.get('/settings/users');
+            const response = await axiosInstance.get('/api/settings/users');
             setUsers(response.data);
         } catch (err) {
             setError('Failed to fetch users. Please try again later.');
