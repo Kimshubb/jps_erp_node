@@ -101,7 +101,11 @@ const MainLayout = ({ children }) => {
     const sidebarWidth = isMiniVariant ? SIDEBAR_MINI_WIDTH : SIDEBAR_WIDTH;
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', ...(isExtraLargeScreen ? {
+            maxWidth: '1920px',
+            margin: '0 auto'
+        } : {})
+         }}>
             {/* Mobile Sidebar */}
             {isMobile ? (
                 <Drawer
@@ -165,7 +169,7 @@ const MainLayout = ({ children }) => {
                         easing: theme.transitions.easing.sharp,
                         duration: theme.transitions.duration.enteringScreen,
                     }),
-                    ...(isLargeScreen && !isMobile ? {
+                    ...(isLargeScreen ? {
                         marginLeft: isSidebarOpen ? `${sidebarWidth}px` : 0,
                         width: isSidebarOpen 
                             ? `calc(100% - ${sidebarWidth}px)` 
@@ -187,7 +191,7 @@ const MainLayout = ({ children }) => {
                     sx={{ 
                         height: TOPBAR_HEIGHT, 
                         pl: isMobile ? 2 : 3,
-                        ...(isLargeScreen && !isMobile && {
+                        ...(isLargeScreen && {
                             width: isSidebarOpen 
                                 ? `calc(100% - ${sidebarWidth}px)` 
                                 : '100%',
@@ -212,15 +216,17 @@ const MainLayout = ({ children }) => {
                             flexGrow: 1,
                             overflow: 'auto',
                             p: { xs: 2, sm: 3 },
-                            maxWidth: { lg: isSidebarOpen && isMiniVariant ? '100%' : '1440px', 
-                                xl: '1600px' },
+                            maxWidth: { lg: '1440px', xl: '1600px' },
                             mx: 'auto',
                             width: '100%',
                             backgroundColor: 'background.default',
                             boxSizing: 'border-box',
-                            ...(isLargeScreen && !isMobile && isSidebarOpen && {
-                                px: isMiniVariant ? 2 : 3
-                            })
+                            px: {
+                                xs: 2,
+                                sm: 3,
+                                lg: isMiniVariant ? 2 : 3,
+                                xl: isMiniVariant ? 2 : 3
+                            },
                         }}
                     >
                         <Box

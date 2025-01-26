@@ -41,6 +41,7 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
+  const isExtraLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
 
   const handleClick = (section) => {
     if (isMiniVariant) {
@@ -183,16 +184,24 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        position: 'relative',
         transition: theme.transitions.create(['width', 'margin'], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.enteringScreen,
         }),
+        ...(isExtraLargeScreen ? {
+          pt: 2, // Add top padding for extra large screens
+        } : {})
       }}
     >
       {/* Header */}
       {!isMiniVariant && (
         <>
-          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+            ...(isExtraLargeScreen ? {
+              px: 3, // Slightly more horizontal padding on extra large screens
+            } : {})
+          }}>
             <Typography variant="h6" noWrap component="div">
               {schoolName || 'School Name'}
             </Typography>
@@ -210,7 +219,7 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
         sx={{
           position: 'absolute',
           right: -15,
-          top: 20,
+          top: isExtraLargeScreen ? 30 : 20,
           bgcolor: 'background.paper',
           border: '1px solid',
           borderColor: 'divider',
@@ -218,6 +227,9 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
             bgcolor: 'background.paper',
           },
           zIndex: 1,
+          ...(isExtraLargeScreen ? {
+            right: -20, // Slightly adjusted for extra large screens
+          } : {})
         }}
         size="small"
       >
@@ -225,8 +237,19 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
       </IconButton>
 
       {/* Menu Items */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <List>
+      <Box sx={{ flexGrow: 1, overflow: 'auto',
+        ...(isExtraLargeScreen ? {
+          px: isMiniVariant ? 1 : 2, // Adjust horizontal padding
+        } : {})
+      }}
+      >
+        <List 
+          sx={{
+            ...(isExtraLargeScreen ? {
+              py: 1, // Slightly reduce vertical padding
+            } : {})
+          }}
+        >
           {menuItems.map((item, index) => renderMenuItem(item, index))}
         </List>
       </Box>
