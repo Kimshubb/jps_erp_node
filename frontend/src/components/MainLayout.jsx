@@ -172,9 +172,9 @@ const MainLayout = ({ children }) => {
                     ...(isLargeScreen ? {
                         marginLeft: isSidebarOpen ? `${sidebarWidth}px` : 0,
                         width: isSidebarOpen 
-                            ? `calc(100% - ${sidebarWidth}px - 24px)` 
-                            : '100%',
-                            marginRight: isSidebarOpen ? `${sidebarWidth}px` : 0
+                            ? `calc(100% - ${sidebarWidth}px)` 
+                            : '100%'
+                        // Remove marginRight
                     } : {})
                 }}
             >
