@@ -10,12 +10,14 @@ const SIDEBAR_MINI_WIDTH = 64;
 const MOBILE_BREAKPOINT = 'md';
 const TOPBAR_HEIGHT = 70;
 const LARGE_SCREEN_BREAKPOINT = 'lg';
+const EXTRA_LARGE_SCREEN_BREAKPOINT = 'xl';
 
 const MainLayout = ({ children }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down(MOBILE_BREAKPOINT));
     const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
     const isLargeScreen = useMediaQuery(theme.breakpoints.up(LARGE_SCREEN_BREAKPOINT));
+    const isExtraLargeScreen = useMediaQuery(theme.breakpoints.up(EXTRA_LARGE_SCREEN_BREAKPOINT));
 
     const [schoolName, setSchoolName] = useState('');
     const [user, setUser] = useState(null);
@@ -163,7 +165,7 @@ const MainLayout = ({ children }) => {
                         easing: theme.transitions.easing.sharp,
                         duration: theme.transitions.duration.enteringScreen,
                     }),
-                    ...(isLargeScreen ? {
+                    ...(isLargeScreen && !isMobile ? {
                         marginLeft: isSidebarOpen ? `${sidebarWidth}px` : 0,
                         width: isSidebarOpen 
                             ? `calc(100% - ${sidebarWidth}px)` 
@@ -185,7 +187,7 @@ const MainLayout = ({ children }) => {
                     sx={{ 
                         height: TOPBAR_HEIGHT, 
                         pl: isMobile ? 2 : 3,
-                        ...(isLargeScreen && {
+                        ...(isLargeScreen && !isMobile && {
                             width: isSidebarOpen 
                                 ? `calc(100% - ${sidebarWidth}px)` 
                                 : '100%',
@@ -210,11 +212,15 @@ const MainLayout = ({ children }) => {
                             flexGrow: 1,
                             overflow: 'auto',
                             p: { xs: 2, sm: 3 },
-                            maxWidth: { lg: '1440px', xl: '1600px' },
+                            maxWidth: { lg: isSidebarOpen && isMiniVariant ? '100%' : '1440px', 
+                                xl: '1600px' },
                             mx: 'auto',
                             width: '100%',
                             backgroundColor: 'background.default',
                             boxSizing: 'border-box',
+                            ...(isLargeScreen && !isMobile && isSidebarOpen && {
+                                px: isMiniVariant ? 2 : 3
+                            })
                         }}
                     >
                         <Box
