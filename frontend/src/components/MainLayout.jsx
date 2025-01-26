@@ -174,7 +174,7 @@ const MainLayout = ({ children }) => {
                         width: isSidebarOpen 
                             ? `calc(100% - ${sidebarWidth}px)` 
                             : '100%',
-                            marginRight: isSidebarOpen ? `${sidebarWidth}px` : 0
+                            marginRight: isSidebarOpen ? `2px` : 0
                     } : {})
                 }}
             >
