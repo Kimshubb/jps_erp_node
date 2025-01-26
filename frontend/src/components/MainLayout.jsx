@@ -169,13 +169,14 @@ const MainLayout = ({ children }) => {
                         easing: theme.transitions.easing.sharp,
                         duration: theme.transitions.duration.enteringScreen,
                     }),
-                    ...(isLargeScreen ? {
-                        marginLeft: isSidebarOpen ? `${sidebarWidth}px` : 0,
+                    ...(isLargeScreen && {
                         width: isSidebarOpen 
                             ? `calc(100% - ${sidebarWidth}px)` 
-                            : '100%'
-                        // Remove marginRight
-                    } : {})
+                            : '100%',
+                        marginLeft: isSidebarOpen ? `${sidebarWidth}px` : 0,
+                        maxWidth: `calc(1440px - ${sidebarWidth}px)`,
+                        margin: '0 auto'
+                    })
                 }}
             >
                 {/* Topbar */}
