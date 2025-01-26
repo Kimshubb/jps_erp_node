@@ -9,11 +9,13 @@ const SIDEBAR_WIDTH = 280;
 const SIDEBAR_MINI_WIDTH = 64;
 const MOBILE_BREAKPOINT = 'md';
 const TOPBAR_HEIGHT = 70;
+const LARGE_SCREEN_BREAKPOINT = 'lg';
 
 const MainLayout = ({ children }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down(MOBILE_BREAKPOINT));
     const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'));
+    const isLargeScreen = useMediaQuery(theme.breakpoints.up(LARGE_SCREEN_BREAKPOINT));
 
     const [schoolName, setSchoolName] = useState('');
     const [user, setUser] = useState(null);
@@ -161,12 +163,12 @@ const MainLayout = ({ children }) => {
                         easing: theme.transitions.easing.sharp,
                         duration: theme.transitions.duration.enteringScreen,
                     }),
-                    ...(isMobile ? {} : {
+                    ...(isLargeScreen ? {
                         marginLeft: isSidebarOpen ? `${sidebarWidth}px` : 0,
                         width: isSidebarOpen 
                             ? `calc(100% - ${sidebarWidth}px)` 
                             : '100%'
-                    })
+                    } : {})
                 }}
             >
                 {/* Topbar */}
@@ -175,9 +177,21 @@ const MainLayout = ({ children }) => {
                     currentTerm={currentTerm}
                     isMiniVariant={isMiniVariant}
                     onMenuClick={handleSidebarToggle}
-                    showMenuIcon={isMobile} // Show menu icon only on mobile
-                    sidebarWidth={SIDEBAR_WIDTH}
-                    sx={{ height: TOPBAR_HEIGHT, pl: isMobile ? 2 : 3 }}
+                    showMenuIcon={isMobile}
+                    sidebarWidth={{
+                        expanded: SIDEBAR_WIDTH,
+                        collapsed: SIDEBAR_MINI_WIDTH
+                    }}
+                    sx={{ 
+                        height: TOPBAR_HEIGHT, 
+                        pl: isMobile ? 2 : 3,
+                        ...(isLargeScreen && {
+                            width: isSidebarOpen 
+                                ? `calc(100% - ${sidebarWidth}px)` 
+                                : '100%',
+                            ml: isSidebarOpen ? `${sidebarWidth}px` : 0
+                        })
+                    }}
                 />
 
                 {/* Content Container */}
@@ -188,7 +202,7 @@ const MainLayout = ({ children }) => {
                         flexDirection: 'column',
                         overflow: 'hidden',
                         position: 'relative',
-                        mt: `${TOPBAR_HEIGHT}px`, // Use TOPBAR_HEIGHT constant
+                        mt: `${TOPBAR_HEIGHT}px`,
                     }}
                 >
                     <Box
