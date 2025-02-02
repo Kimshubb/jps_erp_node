@@ -198,11 +198,25 @@ class SchoolDataService {
      * @returns {Promise<number>} Total payment amount
      */
     async getPaidViaMethodToday(method) {
+        // Create date range for today (midnight to midnight)
         const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
         const result = await prisma.feePayment.aggregate({
-            where: { schoolId: this.schoolId, method, payDate: today },
-            _sum: { amount: true }
+            where: { 
+                schoolId: this.schoolId, 
+                method,
+                payDate: {
+                    gte: startOfDay,
+                    lt: endOfDay
+                }
+            },
+            _sum: { 
+                amount: true 
+            }
         });
+        
         return result._sum.amount || 0;
     }
      /**
