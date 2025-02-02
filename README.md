@@ -15,7 +15,7 @@ Here's the structure we'll aim for:
 │   ├── .env               # Environment variables for backend
 │   ├── prisma/schema.prisma
 │   ├── package.json
-│   └── server.js          # Entry point for Express app
+│   └── app.js          # Entry point for Express app
 │
 ├── /frontend              # React frontend
 │   ├── /public
@@ -116,12 +116,12 @@ app.listen(PORT, () => {
 
 ### Frontend API Calls (`/frontend/src/services/api.js`):
 ```javascript
-import axios from 'axios';
+import axiosInstance from 'axiosInstance.js';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-export const fetchSchoolData = async () => {
-  const response = await axios.get(`${API_URL}/school/data`);
+export const SchoolDataService = async () => {
+  const response = await axiosInstance.get(`${API_URL}/school/data`);
   return response.data;
 };
 ```
@@ -129,7 +129,7 @@ export const fetchSchoolData = async () => {
 ### Use the API in Components (`/frontend/src/pages/Dashboard.js`):
 ```javascript
 import React, { useEffect, useState } from 'react';
-import { fetchSchoolData } from '../services/api';
+import { SchoolDataService } from '../services';
 
 const Dashboard = () => {
   const [schoolData, setSchoolData] = useState(null);
