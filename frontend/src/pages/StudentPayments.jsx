@@ -98,7 +98,7 @@ const StudentsPayments = () => {
         setOpen(true);
 
         try {
-            const response = await axiosInstance.get(`/api/students/${studentId}/fee-statement`);
+            const response = await axiosInstance.get(`/api/payments/student/${studentId}/fee-statement`);
             if (response.data.success) {
                 setSelectedStatement(response.data.data);
             } else {
