@@ -155,6 +155,7 @@ class SchoolDataService {
      * @returns {Promise<object>} Complete fee statement
      */
     async generateFeeStatement(studentId) {
+        console.log(`Generating fee statement for student ${studentId}`);
         try {
             const currentTerm = await this.getCurrentTerm();
             const student = await this.getStudentDetails(studentId);
@@ -167,7 +168,7 @@ class SchoolDataService {
             const totalBilled = regularFees + totalAdditionalFees;
             const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
             const currentBalance = (student.cfBalance + totalBilled) - totalPaid;
-
+            console.log('Fee statement generated successfully');
             return {
                 termInfo: {
                     id: currentTerm.id,

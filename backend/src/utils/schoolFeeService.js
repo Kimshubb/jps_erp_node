@@ -2,6 +2,13 @@ const prisma = require('./prismaClient');
 
 class StudentFeeService {
     constructor(schoolId, studentId, termId) {
+      console.log(`🔍 StudentFeeService Initialized:`, {
+        schoolId, 
+        studentId, 
+        termId,
+        timestamp: new Date().toISOString()
+      });
+
       this.schoolId = schoolId;
       this.studentId = studentId;
       this.termId = termId;
@@ -9,10 +16,13 @@ class StudentFeeService {
       this.feeStructure = null; // Cache fee structure
     }
   
-    /**
-     * Fetch student with grade and additional fees
-     */
     async #fetchStudent() {
+      console.log(`📋 Fetching Student Details:`, {
+        studentId: this.studentId,
+        schoolId: this.schoolId,
+        timestamp: new Date().toISOString()
+      });
+
       this.student = await prisma.student.findUnique({
         where: { 
           id_schoolId: { 
@@ -29,16 +39,25 @@ class StudentFeeService {
       });
   
       if (!this.student) {
+        console.warn(`⚠️ Student Not Found:`, {
+          studentId: this.studentId,
+          schoolId: this.schoolId,
+          timestamp: new Date().toISOString()
+        });
         throw new Error(`Student ${this.studentId} not found in school ${this.schoolId}`);
       }
   
       return this.student;
     }
   
-    /**
-     * Fetch fee structure for the student's grade and term
-     */
     async #fetchFeeStructure() {
+      console.log(`💰 Fetching Fee Structure:`, {
+        studentId: this.studentId,
+        schoolId: this.schoolId,
+        termId: this.termId,
+        timestamp: new Date().toISOString()
+      });
+
       if (!this.student) await this.#fetchStudent();
   
       this.feeStructure = await prisma.feeStructure.findUnique({
@@ -54,15 +73,18 @@ class StudentFeeService {
       return this.feeStructure;
     }
   
-    /**
-     * Calculate total fees and payments
-     */
     async getBalanceData() {
       try {
+        console.log(`📊 Generating Balance Data:`, {
+          studentId: this.studentId,
+          schoolId: this.schoolId,
+          termId: this.termId,
+          timestamp: new Date().toISOString()
+        });
+
         await this.#fetchStudent();
         await this.#fetchFeeStructure();
   
-        // Calculate standard fees (0 if no structure exists)
         const standardFees = this.feeStructure
           ? (this.feeStructure.tuitionFee || 0) +
             (this.feeStructure.assBooks || 0) +
@@ -71,13 +93,11 @@ class StudentFeeService {
             (this.feeStructure.others || 0)
           : 0;
   
-        // Calculate additional fees
         const additionalFees = this.student.additionalFees.reduce(
           (sum, fee) => sum + (fee.amount || 0),
           0
         );
   
-        // Fetch payments
         const payments = await prisma.feePayment.aggregate({
           where: {
             studentId: this.studentId,
@@ -86,33 +106,62 @@ class StudentFeeService {
           },
           _sum: { amount: true },
         });
-  
-        return {
+
+        const balanceData = {
           cfBalance: this.student.cfBalance || 0,
           standardFees,
           additionalFees,
           paidAmount: payments._sum?.amount || 0,
         };
+
+        console.log(`📈 Balance Data Generated:`, balanceData);
+  
+        return balanceData;
       } catch (error) {
-        console.error("Failed to fetch balance data:", error);
+        console.error("❌ Failed to fetch balance data:", {
+          error: error.message,
+          studentId: this.studentId,
+          schoolId: this.schoolId,
+          termId: this.termId,
+          timestamp: new Date().toISOString()
+        });
         throw error;
       }
     }
   
-    /**
-     * Calculate the current balance
-     */
     async calculateCurrentBalance() {
+      console.log(`💳 Calculating Current Balance:`, {
+        studentId: this.studentId,
+        schoolId: this.schoolId,
+        termId: this.termId,
+        timestamp: new Date().toISOString()
+      });
+
       const { cfBalance, standardFees, additionalFees, paidAmount } =
         await this.getBalanceData();
-      return cfBalance + (standardFees + additionalFees - paidAmount);
+      
+      const currentBalance = cfBalance + (standardFees + additionalFees - paidAmount);
+      
+      console.log(`💸 Current Balance Calculated:`, currentBalance);
+      
+      return currentBalance;
     }
   
-    /**
-     * Check if fee structure exists for the grade/term
-     */
     async feeStructureExists() {
+      console.log(`🏦 Checking Fee Structure Existence:`, {
+        studentId: this.studentId,
+        schoolId: this.schoolId,
+        termId: this.termId,
+        timestamp: new Date().toISOString()
+      });
+
       if (!this.feeStructure) await this.#fetchFeeStructure();
-      return !!this.feeStructure;
+      
+      const exists = !!this.feeStructure;
+      console.log(`📝 Fee Structure Exists:`, exists);
+      
+      return exists;
     }
 }
+
+module.exports = StudentFeeService;
