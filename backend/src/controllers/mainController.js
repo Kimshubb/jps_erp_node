@@ -202,7 +202,4 @@ const searchStudent = async (req, res) => {
     }
 };
 
-
-
-
 module.exports = { dashboard, getGradesAndTerms, searchStudent}; // Export functions for use in routes

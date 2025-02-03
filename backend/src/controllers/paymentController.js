@@ -1,11 +1,12 @@
 const prisma = require('../utils/prismaClient');
 //const  calculateBalance = require('../utils/calculateBalance');
-const { fetchBalanceData, calculateBalance } = require('../utils/calculateBalance');
+//const { fetchBalanceData, calculateBalance } = require('../utils/calculateBalance');
 const { validationResult } = require('express-validator');
 const { DateTime } = require('luxon'); // For date handling
 //const FeesUtility = require('../utils/FeeUtility');
 const QRCode = require('qrcode');
 const SchoolDataService = require('../utils/schoolDataService');
+const StudentFeeService = require('../utils/studentFeeService');
 const { Parser } = require('json2csv');
 
 
@@ -22,7 +23,6 @@ const newPayment = async (req, res) => {
         return res.status(400).json({ error: 'Payment amount must be greater than 0' });
     }
 
-    // Add validation for Mpesa payments
     if ((method === 'Mpesa' || method === 'Bank') && !code) {
         return res.status(400).json({ error: `${method} payments require a transaction code` });
     }
@@ -37,33 +37,24 @@ const newPayment = async (req, res) => {
             throw new Error('No active term found.');
         }
 
-        // Find student
-        const student = await prisma.student.findUnique({
-            where: { id_schoolId: { id: studentId, schoolId } },
-            select: { id: true, fullName: true, cfBalance: true, active: true }
-        });
+        // Use StudentFeeService instead of separate functions
+        const feeService = new StudentFeeService(schoolId, studentId, currentTerm.id);
+        
+        // This will throw an error if student not found or inactive
+        await feeService.getBalanceData();
 
-        if (!student) {
-            throw new Error('Student not found.');
-        }
-        if (!student.active) {
-            throw new Error('Inactive student.');
-        }
-
-        // Calculate balance
-        //const currentBalance = await calculateBalance(student.id, currentTerm.id);
-        const balanceData = await fetchBalanceData(student.id, currentTerm.id);
-        const currentBalance = calculateBalance(balanceData);
+        // Calculate current balance
+        const currentBalance = await feeService.calculateCurrentBalance();
 
         // Handle Mpesa transaction if applicable
         if (method === 'Mpesa' || method === 'Bank') {
             const existingTransaction = await prisma.mpesaTransaction.findUnique({ where: { code } });
             if (existingTransaction) {
-                throw new Error(`${method}Transaction code already used.`);
+                throw new Error(`${method} Transaction code already used.`);
             }
 
             await prisma.mpesaTransaction.create({
-                data: { code, amount, verified: false /*schoolId*/ }
+                data: { code, amount, verified: false }
             });
         }
 
@@ -72,10 +63,10 @@ const newPayment = async (req, res) => {
             data: {
                 method,
                 amount,
-                code: (method === 'Mpesa' || method==='Bank') ? code : null,
+                code: (method === 'Mpesa' || method === 'Bank') ? code : null,
                 balance: currentBalance - amount,
                 schoolId,
-                studentId: student.id,
+                studentId,
                 payDate: new Date(),
                 termId: currentTerm.id
             }
@@ -83,7 +74,7 @@ const newPayment = async (req, res) => {
 
         // Update student's carry forward balance
         await prisma.student.update({
-            where: { id_schoolId: { id: student.id, schoolId } },
+            where: { id_schoolId: { id: studentId, schoolId } },
             data: { cfBalance: Math.max(0, currentBalance - amount) }
         });
 
@@ -98,13 +89,12 @@ const newPayment = async (req, res) => {
 };
 
 
-
 const printReceipt = async (req, res) => {
     const { studentId, paymentId } = req.params;
-    const schoolId = req.user.schoolId; // Assume set by auth middleware
+    const schoolId = req.user.schoolId;
 
     try {
-        // Fetch student, school, and current term details
+        // Fetch student and school details
         const student = await prisma.student.findUnique({
             where: { id: studentId },
             include: { school: true }
@@ -123,7 +113,10 @@ const printReceipt = async (req, res) => {
             return res.status(400).json({ message: 'Current term not set for the school.' });
         }
 
-        const { balance, currentTerm: termDetails } = await calculateBalance(studentId);
+        // Use StudentFeeService for balance calculation
+        const feeService = new StudentFeeService(schoolId, studentId, currentTerm.id);
+        const balanceData = await feeService.getBalanceData();
+        const currentBalance = await feeService.calculateCurrentBalance();
 
         if (parseInt(paymentId) === 0) {
             // Generate fee statement
@@ -144,10 +137,10 @@ const printReceipt = async (req, res) => {
                     id: student.id,
                     name: student.fullName
                 },
-                termDetails: termDetails,
+                termDetails: currentTerm,
                 payments,
                 totalPaid,
-                balance
+                balance: currentBalance
             });
         } else {
             // Generate receipt for a specific payment
@@ -172,10 +165,10 @@ const printReceipt = async (req, res) => {
                     id: student.id,
                     name: student.fullName
                 },
-                termDetails: termDetails,
+                termDetails: currentTerm,
                 payment,
                 qrCode,
-                balance
+                balance: currentBalance
             });
         }
     } catch (error) {
@@ -187,7 +180,7 @@ const printReceipt = async (req, res) => {
 const studentPayments = async (req, res) => {
     const gradeFilter = req.query.grade || 'all';
     const streamFilter = req.query.stream || 'all';
-    const termFilter = req.query.term || 'current'; // Default to current term
+    const termFilter = req.query.term || 'current';
     const page = parseInt(req.query.page) || 1;
     const perPage = 15;
     const schoolId = req.user.schoolId;
@@ -223,14 +216,15 @@ const studentPayments = async (req, res) => {
 
         const studentPaymentDetails = await Promise.all(
             students.map(async (student) => {
-                const balanceData = await fetchBalanceData(student.id, termId);
-                const balance = calculateBalance(balanceData);
+                const feeService = new StudentFeeService(schoolId, student.id, termId);
+                const balanceData = await feeService.getBalanceData();
+                const balance = await feeService.calculateCurrentBalance();
 
                 return {
                     id: student.id,
                     fullName: student.fullName,
                     grade: student.grade.name,
-                    gradeId: student.grade.id, // Ensure gradeId is included
+                    gradeId: student.grade.id,
                     stream: student.stream?.name || 'N/A',
                     totalPaid: balanceData.paidAmount,
                     balance
@@ -240,7 +234,7 @@ const studentPayments = async (req, res) => {
 
         const validGradeIds = studentPaymentDetails
             .map((s) => s.gradeId)
-            .filter((id) => id !== undefined); // Filter out undefined values
+            .filter((id) => id !== undefined);
 
         const streams = await prisma.stream.findMany({
             where: {
@@ -269,36 +263,18 @@ const studentPayments = async (req, res) => {
 };
 
 const getStudentsWithFilters = async (req, res) => {
-    const { schoolId } = req.user.schoolId; // Assumes schoolId is extracted from the authenticated user.
+    const { schoolId } = req.user.schoolId; //  schoolId is extracted from the authenticated user.
     const { page = 1, limit = 10, gradeId, streamId, feeId } = req.query; // Pagination and filters
 
     try {
+        const schoolDataService = new SchoolDataService(schoolId);
         const pageNumber = parseInt(page, 10);
         const pageSize = parseInt(limit, 10);
         const skip = (pageNumber - 1) * pageSize;
 
         // Fetch grades for the school
-        const grades = await prisma.grade.findMany({
-            where: { schoolId },
-            select: {
-                id: true,
-                name: true,
-            },
-            orderBy: { name: 'asc' },
-        });
+        const { grades, streams } = await schoolDataService.getGradesAndStreams();
 
-        // Get streams for the valid grades
-        const validGradeIds = grades.map((grade) => grade.id);
-        const streams = await prisma.stream.findMany({
-            where: {
-                gradeId: { in: validGradeIds },
-            },
-            select: {
-                id: true,
-                name: true,
-                gradeId: true,
-            },
-        });
         // Fetch additional fees for the school
         const additionalFees = await prisma.additionalFee.findMany({
             where: { schoolId },
@@ -548,6 +524,29 @@ const feeReports = async (req, res) => {
             success: false,
             message: error.message || 'An error occurred while generating fee reports.',
             error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+};
+const getStudentFeeStatement = async (req, res) => {
+    const { studentId } = req.params;
+    const schoolId = req.user.schoolId;
+    
+    try {
+        const schoolDataService = new SchoolDataService(schoolId);
+        const statement = await schoolDataService.generateFeeStatement(studentId);
+        
+        return res.status(200).json({
+            success: true,
+            data: statement
+        });
+    } catch (error) {
+        console.error('Error in fee statement controller:', error);
+        return res.status(
+            ['Student not found', 'No active term found', 'Fee structure not found for this grade']
+                .includes(error.message) ? 400 : 500
+        ).json({
+            success: false,
+            error: error.message
         });
     }
 };
@@ -967,4 +966,4 @@ const addAdditionalFee = async (req, res) => {
     }
 };*/
 
-module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments, getAllPayments, exportPayments, feeReports/* searchStudentPayments, addAdditionalFee*/ };
+module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments, getAllPayments, exportPayments, feeReports, getStudentFeeStatement/* searchStudentPayments, addAdditionalFee*/ };

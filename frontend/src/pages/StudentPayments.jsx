@@ -17,8 +17,24 @@ import {
     Typography,
     Alert,
     Pagination,
+    Button,
+    Modal
 } from '@mui/material';
 import axiosInstance from '../utils/axiosInstance';
+
+const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 500,
+    bgcolor: 'background.paper',
+    boxShadow: 24,
+    p: 4,
+    borderRadius: 2,
+    maxHeight: '80vh',
+    overflowY: 'auto',
+};
 
 const StudentsPayments = () => {
     const [students, setStudents] = useState([]);
@@ -29,6 +45,10 @@ const StudentsPayments = () => {
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    const [open, setOpen] = useState(false);
+    const [selectedStatement, setSelectedStatement] = useState(null);
+    const [statementLoading, setStatementLoading] = useState(false);
 
     const fetchStudentsPayments = useCallback(async () => {
         try {
@@ -72,6 +92,26 @@ const StudentsPayments = () => {
         setPagination((prev) => ({ ...prev, page: value }));
     };
 
+    const handleViewStatement = async (studentId) => {
+        setStatementLoading(true);
+        setSelectedStatement(null);
+        setOpen(true);
+
+        try {
+            const response = await axiosInstance.get(`/api/students/${studentId}/fee-statement`);
+            if (response.data.success) {
+                setSelectedStatement(response.data.data);
+            } else {
+                setSelectedStatement({ error: response.data.error });
+            }
+        } catch (error) {
+            console.error('Error fetching fee statement:', error);
+            setSelectedStatement({ error: 'Failed to fetch fee statement. Try again later.' });
+        } finally {
+            setStatementLoading(false);
+        }
+    };
+
     return (
         <Container>
             <Typography variant="h4" gutterBottom>
@@ -81,7 +121,6 @@ const StudentsPayments = () => {
             {error && <Alert severity="error">{error}</Alert>}
 
             <Box display="flex" gap={2} mb={4}>
-                {/* Grade Filter */}
                 <FormControl fullWidth>
                     <InputLabel>Grade</InputLabel>
                     <Select
@@ -97,7 +136,6 @@ const StudentsPayments = () => {
                     </Select>
                 </FormControl>
 
-                {/* Term Filter */}
                 <FormControl fullWidth>
                     <InputLabel>Term</InputLabel>
                     <Select
@@ -113,7 +151,6 @@ const StudentsPayments = () => {
                     </Select>
                 </FormControl>
 
-                {/* Stream Filter */}
                 <FormControl fullWidth>
                     <InputLabel>Stream</InputLabel>
                     <Select
@@ -143,6 +180,7 @@ const StudentsPayments = () => {
                                 <TableCell>Stream</TableCell>
                                 <TableCell>Total Paid</TableCell>
                                 <TableCell>Balance</TableCell>
+                                <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -154,6 +192,15 @@ const StudentsPayments = () => {
                                     <TableCell>{student.stream}</TableCell>
                                     <TableCell>KES {student.totalPaid}</TableCell>
                                     <TableCell>KES {student.balance}</TableCell>
+                                    <TableCell>
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary" 
+                                            onClick={() => handleViewStatement(student.id)}
+                                        >
+                                            View Statement
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -167,6 +214,43 @@ const StudentsPayments = () => {
                 onChange={handlePageChange}
                 sx={{ mt: 3 }}
             />
+
+            <Modal open={open} onClose={() => setOpen(false)}>
+                <Box sx={modalStyle}>
+                    <Typography variant="h6" gutterBottom>Fee Statement</Typography>
+                    {statementLoading ? (
+                        <CircularProgress />
+                    ) : selectedStatement?.error ? (
+                        <Alert severity="error">{selectedStatement.error}</Alert>
+                    ) : (
+                        <>
+                            <Typography><strong>Student:</strong> {selectedStatement?.fullName}</Typography>
+                            <Typography><strong>Grade:</strong> {selectedStatement?.grade}</Typography>
+                            <TableContainer component={Paper} sx={{ mt: 2 }}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Date</TableCell>
+                                            <TableCell>Amount (KES)</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {selectedStatement?.payments.map((payment, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
+                                                <TableCell>{payment.amount}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                            <Typography sx={{ mt: 2 }}><strong>Total Paid:</strong> KES {selectedStatement?.totalPaid}</Typography>
+                            <Typography><strong>Balance:</strong> KES {selectedStatement?.balance}</Typography>
+                        </>
+                    )}
+                    <Button variant="contained" color="secondary" onClick={() => setOpen(false)} sx={{ mt: 2 }}>Close</Button>
+                </Box>
+            </Modal>
         </Container>
     );
 };

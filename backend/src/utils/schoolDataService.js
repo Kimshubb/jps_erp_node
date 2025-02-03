@@ -35,8 +35,190 @@ class SchoolDataService {
             throw new Error('Failed to fetch current term');
         }
     }
+     /**
+     * Get student details with grade and stream information
+     * @param {string} studentId 
+     * @returns {Promise<object>} Student details
+     */
+     async getStudentDetails(studentId) {
+        const student = await prisma.student.findUnique({
+            where: { 
+                id_schoolId: { 
+                    id: studentId, 
+                    schoolId: this.schoolId 
+                }
+            },
+            select: {
+                id: true,
+                fullName: true,
+                grade: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                },
+                stream: {
+                    select: {
+                        name: true
+                    }
+                },
+                cfBalance: true,
+                active: true,
+                additionalFees: {
+                    select: {
+                        id: true,
+                        feeName: true,
+                        amount: true
+                    }
+                }
+            }
+        });
 
+        if (!student) {
+            throw new Error('Student not found');
+        }
 
+        return student;
+    }
+    /**
+     * Get fee structure for a specific grade and term
+     * @param {number} gradeId 
+     * @param {number} termId 
+     * @returns {Promise<object>} Fee structure details
+     */
+    async getGradeFeeStructure(gradeId, termId) {
+        const feeStructure = await prisma.feeStructure.findFirst({
+            where: {
+                gradeId,
+                termId,
+                schoolId: this.schoolId
+            },
+            select: {
+                tuitionFee: true,
+                assBooks: true,
+                diaryFee: true,
+                activityFee: true,
+                others: true
+            }
+        });
+
+        if (!feeStructure) {
+            throw new Error('Fee structure not found for this grade');
+        }
+
+        return feeStructure;
+    }
+    /**
+     * Get term payments for a student
+     * @param {string} studentId 
+     * @param {number} termId 
+     * @returns {Promise<Array>} List of payments
+     */
+    async getStudentTermPayments(studentId, termId) {
+        return prisma.feePayment.findMany({
+            where: {
+                studentId,
+                schoolId: this.schoolId,
+                termId
+            },
+            orderBy: {
+                payDate: 'asc'
+            },
+            select: {
+                id: true,
+                method: true,
+                amount: true,
+                payDate: true,
+                code: true,
+                balance: true
+            }
+        });
+    }
+    /**
+     * Calculate total fees from fee structure
+     * @param {object} feeStructure 
+     * @returns {number} Total fees
+     */
+    calculateTotalRegularFees(feeStructure) {
+        return (
+            feeStructure.tuitionFee +
+            feeStructure.assBooks +
+            feeStructure.diaryFee +
+            feeStructure.activityFee +
+            feeStructure.others
+        );
+    }
+
+    /**
+     * Generate complete fee statement for a student
+     * @param {string} studentId 
+     * @returns {Promise<object>} Complete fee statement
+     */
+    async generateFeeStatement(studentId) {
+        try {
+            const currentTerm = await this.getCurrentTerm();
+            const student = await this.getStudentDetails(studentId);
+            const feeStructure = await this.getGradeFeeStructure(student.grade.id, currentTerm.id);
+            const payments = await this.getStudentTermPayments(studentId, currentTerm.id);
+
+            // Calculate totals
+            const regularFees = this.calculateTotalRegularFees(feeStructure);
+            const totalAdditionalFees = student.additionalFees.reduce((sum, fee) => sum + fee.amount, 0);
+            const totalBilled = regularFees + totalAdditionalFees;
+            const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+            const currentBalance = (student.cfBalance + totalBilled) - totalPaid;
+
+            return {
+                termInfo: {
+                    id: currentTerm.id,
+                    name: currentTerm.name
+                },
+                studentInfo: {
+                    id: student.id,
+                    name: student.fullName,
+                    grade: student.grade.name,
+                    stream: student.stream.name,
+                    status: student.active ? 'Active' : 'Inactive'
+                },
+                billing: {
+                    regularFees: {
+                        total: regularFees,
+                        breakdown: {
+                            tuitionFee: feeStructure.tuitionFee,
+                            assessmentBooks: feeStructure.assBooks,
+                            diaryFee: feeStructure.diaryFee,
+                            activityFee: feeStructure.activityFee,
+                            others: feeStructure.others
+                        }
+                    },
+                    additionalFees: student.additionalFees.map(fee => ({
+                        name: fee.feeName,
+                        amount: fee.amount
+                    })),
+                    totalBilled,
+                    carriedForwardBalance: student.cfBalance
+                },
+                payments: payments.map(payment => ({
+                    date: payment.payDate,
+                    method: payment.method,
+                    amount: payment.amount,
+                    code: payment.code,
+                    runningBalance: payment.balance
+                })),
+                summary: {
+                    totalRegularFees: regularFees,
+                    totalAdditionalFees,
+                    totalBilled,
+                    totalPaid,
+                    carriedForwardBalance: student.cfBalance,
+                    currentBalance
+                }
+            };
+        } catch (error) {
+            console.error('Error generating fee statement:', error);
+            throw error;
+        }
+    }
     /**
      * Get recent payments for this school
      * @param {number} limit 

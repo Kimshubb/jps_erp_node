@@ -1,6 +1,6 @@
 // src/routes/paymentRoutes.js
 const express = require('express');
-const { newPayment, printReceipt, getStudentsWithFilters, studentPayments, getAllPayments, exportPayments, feeReports } = require('../controllers/paymentController');
+const { newPayment, printReceipt, getStudentsWithFilters, studentPayments, getAllPayments, exportPayments, feeReports, getStudentFeeStatement } = require('../controllers/paymentController');
 //const { body } = require('express-validator');
 //const { isAuthenticated } = require('../middleware/authMiddleware'); // Custom middleware for authentication
 
@@ -28,6 +28,10 @@ router.get('/all-recent-payments', getAllPayments);
 // Route to fetch a receipt
 // GET /api/payments/student/:studentId/receipt/:paymentId
 router.get('/student/:studentId/receipt/:paymentId', printReceipt);
+
+// Route to fetch a student fee statement
+app.get('/api/students/:studentId/fee-statement', getStudentFeeStatement);
+
 
 // Route to fetch all students payments
 // GET /api/payments/view
