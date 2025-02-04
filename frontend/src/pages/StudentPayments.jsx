@@ -99,7 +99,7 @@ const StudentsPayments = () => {
 
         try {
             console.log('Attempting to fetch statement for student:', studentId);
-            const response = await axiosInstance.get(`/api/payments/student/${studentId}/fee-statement`);
+            const response = await axiosInstance.get(`/api/payments/${studentId}/fee-statement`);
             console.log('Full response:', response);
             if (response.data.success) {
                 setSelectedStatement(response.data.data);
