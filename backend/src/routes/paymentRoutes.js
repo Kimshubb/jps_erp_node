@@ -17,6 +17,15 @@ router.post(
     ],
     newPayment
 );*/
+router.use((req, res, next) => {
+    console.log('Payment route accessed:', {
+        method: req.method,
+        path: req.path,
+        params: req.params,
+        query: req.query
+    });
+    next();
+});
 
 router.post('/new', newPayment);
 

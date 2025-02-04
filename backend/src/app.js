@@ -53,18 +53,7 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from React build
-//app.use(express.static(path.join(__dirname, '../frontend/build')));
-// Serve static files (ONLY in development)
-if (process.env.NODE_ENV !== 'production') {
-    console.log("Running in development mode - Serving frontend from Express");
-    app.use(express.static(path.join(__dirname, '../frontend/build')));
-
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-    });
-} else {
-    console.log("Running in production mode - Nginx will serve frontend");
-}
+app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Serve static files
 app.use('/images', express.static(path.join(__dirname, 'public/uploads')));
@@ -108,10 +97,10 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
-/* Serve React frontend for all other routes
+// Serve React frontend for all other routes
 app.get('*', (req, res) => {
    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});*/
+});
 
 // Server Configuration
 const PORT = process.env.PORT || 5000;
