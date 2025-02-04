@@ -39,7 +39,12 @@ router.get('/all-recent-payments', getAllPayments);
 router.get('/student/:studentId/receipt/:paymentId', printReceipt);
 
 // Route to fetch a student fee statement
-router.get('/student/:studentId/fee-statement', getStudentFeeStatement);
+router.get('/student/:studentId/fee-statement', (req, res, next) => {
+    console.log('FEE STATEMENT ROUTE ACCESSED');
+    console.log('Student ID:', req.params.studentId);
+    console.log('User:', req.user);
+    next();
+}, getStudentFeeStatement);
 
 
 // Route to fetch all students payments

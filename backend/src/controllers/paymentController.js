@@ -966,4 +966,4 @@ const addAdditionalFee = async (req, res) => {
     }
 };*/
 
-module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments, getAllPayments, exportPayments, feeReports, getStudentFeeStatement/* searchStudentPayments, addAdditionalFee*/ };
+module.exports = { newPayment, getStudentsWithFilters, printReceipt, studentPayments, getAllPayments, exportPayments, feeReports, getStudentFeeStatement /* searchStudentPayments, addAdditionalFee*/ };

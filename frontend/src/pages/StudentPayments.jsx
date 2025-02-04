@@ -98,15 +98,24 @@ const StudentsPayments = () => {
         setOpen(true);
 
         try {
+            console.log('Attempting to fetch statement for student:', studentId);
             const response = await axiosInstance.get(`/api/payments/student/${studentId}/fee-statement`);
+            console.log('Full response:', response);
             if (response.data.success) {
                 setSelectedStatement(response.data.data);
             } else {
                 setSelectedStatement({ error: response.data.error });
             }
         } catch (error) {
-            console.error('Error fetching fee statement:', error);
-            setSelectedStatement({ error: 'Failed to fetch fee statement. Try again later.' });
+            console.error('FULL Error details:', {
+                message: error.message,
+                response: error.response,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+            setSelectedStatement({ 
+                error: error.response?.data?.error || 'Failed to fetch fee statement. Try again later.' 
+            });
         } finally {
             setStatementLoading(false);
         }
