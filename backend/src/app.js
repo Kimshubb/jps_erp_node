@@ -46,14 +46,12 @@ app.use(cors(corsOptions));*/
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Log requests for debugging
+// Log requests for debugging middleware
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()}Request Method: ${req.method}, Request URL: ${req.url}`);
     next();
 });
 
-// Serve static files from React build
-app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Serve static files
 app.use('/images', express.static(path.join(__dirname, 'public/uploads')));
@@ -97,7 +95,11 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
-/* Serve React frontend for all other routes
+/*Serve static files from React build
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+
+//Serve React frontend for all other routes
 app.get('*', (req, res) => {
    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });*/
