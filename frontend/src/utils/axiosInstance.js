@@ -55,15 +55,18 @@ const handleAuthRedirect = () => {
 axiosInstance.interceptors.request.use(
     async (config) => {
         const token = localStorage.getItem('token');
+        console.log('Token:', token);
         
         // Check token expiration before making request
         if (token && isTokenExpired(token)) {
+            console.log('Token expired. Redirecting to login page.');
             handleAuthRedirect();
             return Promise.reject(new axios.Cancel('Token expired'));
         }
         
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            console.log('Token added to headers:', config.headers);
         }
         
         console.log('Request config:', {
