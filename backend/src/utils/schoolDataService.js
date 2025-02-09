@@ -31,6 +31,7 @@ class SchoolDataService {
 
             return currentTerm;
         } catch (error) {
+            console.log('Error fetching current term:', error);
             console.error('Error fetching current term:', error);
             throw new Error('Failed to fetch current term');
         }
@@ -39,100 +40,130 @@ class SchoolDataService {
      * Get student details with grade and stream information
      * @param {string} studentId 
      * @returns {Promise<object>} Student details
+     * @throws {Error} When student is not found or database error occurs
      */
-     async getStudentDetails(studentId) {
-        const student = await prisma.student.findUnique({
-            where: { 
-                id_schoolId: { 
-                    id: studentId, 
-                    schoolId: this.schoolId 
-                }
-            },
-            select: {
-                id: true,
-                fullName: true,
-                grade: {
-                    select: {
-                        id: true,
-                        name: true
+    async getStudentDetails(studentId) {
+        try {
+            console.log('Fetching student details:', studentId);
+            const student = await prisma.student.findUnique({
+                where: { 
+                    id_schoolId: { 
+                        id: studentId, 
+                        schoolId: this.schoolId 
                     }
                 },
-                stream: {
-                    select: {
-                        name: true
-                    }
-                },
-                cfBalance: true,
-                active: true,
-                additionalFees: {
-                    select: {
-                        id: true,
-                        feeName: true,
-                        amount: true
+                select: {
+                    id: true,
+                    fullName: true,
+                    grade: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    },
+                    stream: {
+                        select: {
+                            name: true
+                        }
+                    },
+                    cfBalance: true,
+                    active: true,
+                    additionalFees: {
+                        select: {
+                            id: true,
+                            feeName: true,
+                            amount: true
+                        }
                     }
                 }
+            });
+
+            if (!student) {
+                throw new Error('Student not found');
             }
-        });
 
-        if (!student) {
-            throw new Error('Student not found');
+            return student;
+        } catch (error) {
+            console.log('Error fetching student details:', error);
+            if (error.message === 'Student not found') {
+                throw error;
+            }
+            throw new Error(`Failed to fetch student details: ${error.message}`);
         }
-
-        return student;
     }
     /**
      * Get fee structure for a specific grade and term
      * @param {number} gradeId 
      * @param {number} termId 
      * @returns {Promise<object>} Fee structure details
+     * @throws {Error} When fee structure is not found or database error occurs
      */
     async getGradeFeeStructure(gradeId, termId) {
-        const feeStructure = await prisma.feeStructure.findFirst({
-            where: {
-                gradeId,
-                termId,
-                schoolId: this.schoolId
-            },
-            select: {
-                tuitionFee: true,
-                assBooks: true,
-                diaryFee: true,
-                activityFee: true,
-                others: true
+        try {
+            console.log('Getting fee structure for grade:', gradeId);
+            const feeStructure = await prisma.feeStructure.findFirst({
+                where: {
+                    gradeId,
+                    termId,
+                    schoolId: this.schoolId
+                },
+                select: {
+                    tuitionFee: true,
+                    assBooks: true,
+                    diaryFee: true,
+                    activityFee: true,
+                    others: true
+                }
+            });
+
+            if (!feeStructure) {
+                throw new Error('Fee structure not found for this grade');
             }
-        });
 
-        if (!feeStructure) {
-            throw new Error('Fee structure not found for this grade');
+            return feeStructure;
+        } catch (error) {
+            console.log('Error fetching fee structure:', error);
+            if (error.message === 'Fee structure not found for this grade') {
+                throw error;
+            }
+            throw new Error(`Failed to fetch fee structure: ${error.message}`);
         }
-
-        return feeStructure;
     }
+
     /**
      * Get term payments for a student
      * @param {string} studentId 
      * @param {number} termId 
      * @returns {Promise<Array>} List of payments
+     * @throws {Error} When database error occurs
      */
     async getStudentTermPayments(studentId, termId) {
-        return prisma.feePayment.findMany({
-            where: {
-                studentId,
-                schoolId: this.schoolId,
-                termId
-            },
-            orderBy: {
-                payDate: 'asc'
-            },
-            select: {
-                id: true,
-                method: true,
-                amount: true,
-                payDate: true,
-                code: true,
-                balance: true
-            }
-        });
+        try {
+            console.log('Fetching student term payments:', studentId, termId);
+            const payments = await prisma.feePayment.findMany({
+                where: {
+                    studentId,
+                    schoolId: this.schoolId,
+                    termId
+                },
+                orderBy: {
+                    payDate: 'asc'
+                },
+                select: {
+                    id: true,
+                    method: true,
+                    amount: true,
+                    payDate: true,
+                    code: true,
+                    balance: true
+                }
+            });
+
+            return payments;
+        } catch (error) {
+            console.log('Error fetching student term payments:', error);
+            throw new Error(`Failed to fetch student term payments: ${error.message}`);
+        }
     }
     /**
      * Calculate total fees from fee structure
@@ -158,16 +189,25 @@ class SchoolDataService {
         console.log(`Generating fee statement for student ${studentId}`);
         try {
             const currentTerm = await this.getCurrentTerm();
+            console.log('Current term:', currentTerm);
             const student = await this.getStudentDetails(studentId);
+            console.log('Student details:', student);
             const feeStructure = await this.getGradeFeeStructure(student.grade.id, currentTerm.id);
+            console.log('Fee structure:', feeStructure);
             const payments = await this.getStudentTermPayments(studentId, currentTerm.id);
+            console.log('Payments:', payments);
+            
 
             // Calculate totals
             const regularFees = this.calculateTotalRegularFees(feeStructure);
+            console.log('Regular fees:', regularFees);
             const totalAdditionalFees = student.additionalFees.reduce((sum, fee) => sum + fee.amount, 0);
+            console.log('Additional fees:', totalAdditionalFees);
             const totalBilled = regularFees + totalAdditionalFees;
             const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+            console.log('Total billed:', totalBilled);
             const currentBalance = (student.cfBalance + totalBilled) - totalPaid;
+            console.log('Current balance:', currentBalance);
             console.log('Fee statement generated successfully');
             return {
                 termInfo: {
@@ -216,6 +256,7 @@ class SchoolDataService {
                 }
             };
         } catch (error) {
+            console.log('Error generating fee statement:', error);
             console.error('Error generating fee statement:', error);
             throw error;
         }

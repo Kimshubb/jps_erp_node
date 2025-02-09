@@ -527,13 +527,18 @@ const feeReports = async (req, res) => {
         });
     }
 };
+
 const getStudentFeeStatement = async (req, res) => {
     const { studentId } = req.params;
     const schoolId = req.user.schoolId;
-    
+    console.log('Student ID:', studentId);
+
     try {
+        console.log('Generating fee statement for student:', studentId);
         const schoolDataService = new SchoolDataService(schoolId);
+        console.log('School data service created by getStudentFeeStatement:');
         const statement = await schoolDataService.generateFeeStatement(studentId);
+        console.log('Fee statement generated:', statement);
         
         return res.status(200).json({
             success: true,
@@ -541,6 +546,7 @@ const getStudentFeeStatement = async (req, res) => {
         });
     } catch (error) {
         console.error('Error in fee statement controller:', error);
+        console.log('Error message:', error.message);
         return res.status(
             ['Student not found', 'No active term found', 'Fee structure not found for this grade']
                 .includes(error.message) ? 400 : 500

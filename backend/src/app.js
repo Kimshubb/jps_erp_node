@@ -84,7 +84,7 @@ app.get('/api', (req, res) => {
             dashboard: '/api/dashboard',
            // students: '/api/students/*',
             settings: '/api/settings/*',
-            //payments: '/api/payments/*'
+            payments: '/api/payments/*',
 
         }
     });
@@ -97,10 +97,10 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Serve React frontend for all other routes
+/* Serve React frontend for all other routes
 app.get('*', (req, res) => {
    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});
+});*/
 
 // Server Configuration
 const PORT = process.env.PORT || 5000;
