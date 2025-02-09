@@ -529,9 +529,12 @@ const feeReports = async (req, res) => {
 };
 
 const getStudentFeeStatement = async (req, res) => {
+    console.log('///Starting getStudentFeeStatement controller');
     const { studentId } = req.params;
     const schoolId = req.user.schoolId;
-    console.log('Student ID:', studentId);
+    console.log('Request params:', { studentId, schoolId });
+    console.log('User from request:', req.user);
+
 
     try {
         console.log('Generating fee statement for student:', studentId);
