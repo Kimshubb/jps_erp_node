@@ -99,7 +99,7 @@ const StudentsPayments = () => {
 
         const token = localStorage.getItem('token');
         console.log('Current token:', token ? 'exists' : 'missing');
-        console.log('Token expired:', token ? isTokenExpired(token) : 'N/A');
+        //console.log('Token expired:', token ? isTokenExpired(token) : 'N/A');
 
         try {
             console.log('Attempting to fetch statement for student:', studentId);
