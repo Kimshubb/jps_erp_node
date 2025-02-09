@@ -42,52 +42,29 @@ class SchoolDataService {
      * @returns {Promise<object>} Student details
      * @throws {Error} When student is not found or database error occurs
      */
-    async getStudentDetails(studentId) {
+     async getStudentDetails(studentId) {
         try {
             console.log('Fetching student details:', studentId);
-            const student = await prisma.student.findUnique({
-                where: { 
-                    id_schoolId: { 
-                        id: studentId, 
-                        schoolId: this.schoolId 
-                    }
-                },
+            const student = await prisma.student.findFirst({ //  Changed from findUnique to findFirst
+                where: { id: studentId, schoolId: this.schoolId },
                 select: {
                     id: true,
                     fullName: true,
-                    grade: {
-                        select: {
-                            id: true,
-                            name: true
-                        }
-                    },
-                    stream: {
-                        select: {
-                            name: true
-                        }
-                    },
+                    grade: { select: { id: true, name: true } },
+                    stream: { select: { name: true } },
                     cfBalance: true,
                     active: true,
-                    additionalFees: {
-                        select: {
-                            id: true,
-                            feeName: true,
-                            amount: true
-                        }
-                    }
+                    additionalFees: { select: { id: true, feeName: true, amount: true } }
                 }
             });
-
+    
             if (!student) {
                 throw new Error('Student not found');
             }
-
+    
             return student;
         } catch (error) {
             console.log('Error fetching student details:', error);
-            if (error.message === 'Student not found') {
-                throw error;
-            }
             throw new Error(`Failed to fetch student details: ${error.message}`);
         }
     }
