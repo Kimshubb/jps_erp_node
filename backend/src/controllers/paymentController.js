@@ -535,18 +535,145 @@ const getStudentFeeStatement = async (req, res) => {
     console.log('Request params:', { studentId, schoolId });
     console.log('User from request:', req.user);
 
-
     try {
-        console.log('Generating fee statement for student:', studentId);
-        const schoolDataService = new SchoolDataService(schoolId);
-        console.log('School data service created by getStudentFeeStatement:');
-        const statement = await schoolDataService.generateFeeStatement(studentId);
-        console.log('Fee statement generated:', statement);
+        console.log(`Generating fee statement for student ${studentId}`);
         
+        // Get current term
+        const currentTerm = await prisma.term.findFirst({
+            where: { 
+                schoolId,
+                current: true 
+            }
+        });
+        console.log('Current term:', currentTerm);
+        
+        if (!currentTerm) {
+            throw new Error('No active term found');
+        }
+
+        // Get student details with relations
+        const student = await prisma.student.findFirst({
+            where: { 
+                id: studentId, 
+                schoolId 
+            },
+            include: {
+                grade: true,
+                stream: true,
+                additionalFees: true
+            },
+        });
+        console.log('Student details:', student);
+
+        if (!student) {
+            throw new Error('Student not found');
+        }
+        console.log('Student found:', student);
+
+        // Get fee structure
+        const feeStructure = await prisma.feeStructure.findFirst({
+            where: {
+                gradeId: student.gradeId,
+                termId: currentTerm.id,
+                schoolId
+            }
+        });
+        console.log('Fee structure:', feeStructure);
+
+        if (!feeStructure) {
+            throw new Error('Fee structure not found for this grade');
+        }
+
+        // Get payments
+        const payments = await prisma.feePayment.findMany({
+            where: {
+                studentId,
+                termId: currentTerm.id,
+                schoolId
+            },
+            orderBy: {
+                payDate: 'asc'
+            }
+        });
+        console.log('Payments:', payments);
+
+        // Calculate totals
+        const regularFees = feeStructure.tuitionFee + 
+                          feeStructure.assBooks + 
+                          feeStructure.diaryFee + 
+                          feeStructure.activityFee + 
+                          feeStructure.others;
+        console.log('Regular fees:', regularFees);
+
+        const totalAdditionalFees = student.additionalFees.reduce(
+            (sum, fee) => sum + fee.amount, 
+            0
+        );
+        console.log('Additional fees:', totalAdditionalFees);
+
+        const totalBilled = regularFees + totalAdditionalFees;
+        const totalPaid = payments.reduce(
+            (sum, payment) => sum + payment.amount, 
+            0
+        );
+        
+        console.log('Total billed:', totalBilled);
+        const currentBalance = (student.cfBalance + totalBilled) - totalPaid;
+        console.log('Current balance:', currentBalance);
+        
+        const statement = {
+            termInfo: {
+                id: currentTerm.id,
+                name: currentTerm.name
+            },
+            studentInfo: {
+                id: student.id,
+                name: student.fullName,
+                grade: student.grade.name,
+                stream: student.stream.name,
+                status: student.active ? 'Active' : 'Inactive'
+            },
+            billing: {
+                regularFees: {
+                    total: regularFees,
+                    breakdown: {
+                        tuitionFee: feeStructure.tuitionFee,
+                        assessmentBooks: feeStructure.assBooks,
+                        diaryFee: feeStructure.diaryFee,
+                        activityFee: feeStructure.activityFee,
+                        others: feeStructure.others
+                    }
+                },
+                additionalFees: student.additionalFees.map(fee => ({
+                    name: fee.feeName,
+                    amount: fee.amount
+                })),
+                totalBilled,
+                carriedForwardBalance: student.cfBalance
+            },
+            payments: payments.map(payment => ({
+                date: payment.payDate,
+                method: payment.method,
+                amount: payment.amount,
+                code: payment.code,
+                runningBalance: payment.balance
+            })),
+            summary: {
+                totalRegularFees: regularFees,
+                totalAdditionalFees,
+                totalBilled,
+                totalPaid,
+                carriedForwardBalance: student.cfBalance,
+                currentBalance
+            }
+        };
+
+        console.log('Fee statement generated successfully');
         return res.status(200).json({
             success: true,
             data: statement
         });
+
     } catch (error) {
         console.error('Error in fee statement controller:', error);
         console.log('Error message:', error.message);

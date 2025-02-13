@@ -161,7 +161,7 @@ class SchoolDataService {
      * Generate complete fee statement for a student
      * @param {string} studentId 
      * @returns {Promise<object>} Complete fee statement
-     */
+     
     async generateFeeStatement(studentId) {
         console.log(`Generating fee statement for student ${studentId}`);
         try {
@@ -237,7 +237,7 @@ class SchoolDataService {
             console.error('Error generating fee statement:', error);
             throw error;
         }
-    }
+    }*/
     /**
      * Get recent payments for this school
      * @param {number} limit 

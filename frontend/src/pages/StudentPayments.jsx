@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Table,
     TableBody,
@@ -18,25 +19,11 @@ import {
     Alert,
     Pagination,
     Button,
-    Modal
-} from '@mui/material';
+} from '@/components/ui/';
 import axiosInstance from '../utils/axiosInstance';
 
-const modalStyle = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 500,
-    bgcolor: 'background.paper',
-    boxShadow: 24,
-    p: 4,
-    borderRadius: 2,
-    maxHeight: '80vh',
-    overflowY: 'auto',
-};
-
-const StudentsPayments = () => {
+const StudentsPaymentsList = () => {
+    const navigate = useNavigate();
     const [students, setStudents] = useState([]);
     const [grades, setGrades] = useState([]);
     const [terms, setTerms] = useState([]);
@@ -46,10 +33,6 @@ const StudentsPayments = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const [open, setOpen] = useState(false);
-    const [selectedStatement, setSelectedStatement] = useState(null);
-    const [statementLoading, setStatementLoading] = useState(false);
-
     const fetchStudentsPayments = useCallback(async () => {
         try {
             setLoading(true);
@@ -58,9 +41,7 @@ const StudentsPayments = () => {
             const response = await axiosInstance.get('/api/payments/view', {
                 params: { 
                     page: pagination.page,
-                    grade: filters.grade,
-                    term: filters.term,
-                    stream: filters.stream,
+                    ...filters
                 }
             });
 
@@ -72,7 +53,6 @@ const StudentsPayments = () => {
             setStreams(filterOptions.streams);
             setPagination(newPagination);
         } catch (err) {
-            console.error('Error fetching student payments:', err);
             setError(err.response?.data?.message || 'Failed to load student payments.');
         } finally {
             setLoading(false);
@@ -84,45 +64,12 @@ const StudentsPayments = () => {
     }, [fetchStudentsPayments]);
 
     const handleFilterChange = (filterName, value) => {
-        setFilters((prev) => ({ ...prev, [filterName]: value }));
-        setPagination((prev) => ({ ...prev, page: 1 })); // Reset to the first page
+        setFilters(prev => ({ ...prev, [filterName]: value }));
+        setPagination(prev => ({ ...prev, page: 1 }));
     };
 
-    const handlePageChange = (event, value) => {
-        setPagination((prev) => ({ ...prev, page: value }));
-    };
-
-    const handleViewStatement = async (studentId) => {
-        setStatementLoading(true);
-        setSelectedStatement(null);
-        setOpen(true);
-
-        const token = localStorage.getItem('token');
-        console.log('Current token:', token ? 'exists' : 'missing');
-        //console.log('Token expired:', token ? isTokenExpired(token) : 'N/A');
-
-        try {
-            console.log('Attempting to fetch statement for student:', studentId);
-            const response = await axiosInstance.get(`/api/payments/${studentId}/fee-statement`);
-            console.log('Full response:', response);
-            if (response.data.success) {
-                setSelectedStatement(response.data.data);
-            } else {
-                setSelectedStatement({ error: response.data.error });
-            }
-        } catch (error) {
-            console.error('FULL Error details:', {
-                message: error.message,
-                response: error.response,
-                status: error.response?.status,
-                data: error.response?.data
-            });
-            setSelectedStatement({ 
-                error: error.response?.data?.error || 'Failed to fetch fee statement. Try again later.' 
-            });
-        } finally {
-            setStatementLoading(false);
-        }
+    const handleViewStatement = (studentId) => {
+        navigate(`/payments/statement/${studentId}`);
     };
 
     return (
@@ -181,7 +128,9 @@ const StudentsPayments = () => {
             </Box>
 
             {loading ? (
-                <CircularProgress />
+                <Box className="flex justify-center p-8">
+                    <CircularProgress />
+                </Box>
             ) : (
                 <TableContainer component={Paper}>
                     <Table>
@@ -221,51 +170,15 @@ const StudentsPayments = () => {
                 </TableContainer>
             )}
 
-            <Pagination
-                count={pagination.totalPages}
-                page={pagination.page}
-                onChange={handlePageChange}
-                sx={{ mt: 3 }}
-            />
-
-            <Modal open={open} onClose={() => setOpen(false)}>
-                <Box sx={modalStyle}>
-                    <Typography variant="h6" gutterBottom>Fee Statement</Typography>
-                    {statementLoading ? (
-                        <CircularProgress />
-                    ) : selectedStatement?.error ? (
-                        <Alert severity="error">{selectedStatement.error}</Alert>
-                    ) : (
-                        <>
-                            <Typography><strong>Student:</strong> {selectedStatement?.fullName}</Typography>
-                            <Typography><strong>Grade:</strong> {selectedStatement?.grade}</Typography>
-                            <TableContainer component={Paper} sx={{ mt: 2 }}>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Date</TableCell>
-                                            <TableCell>Amount (KES)</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {selectedStatement?.payments.map((payment, index) => (
-                                            <TableRow key={index}>
-                                                <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
-                                                <TableCell>{payment.amount}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                            <Typography sx={{ mt: 2 }}><strong>Total Paid:</strong> KES {selectedStatement?.totalPaid}</Typography>
-                            <Typography><strong>Balance:</strong> KES {selectedStatement?.balance}</Typography>
-                        </>
-                    )}
-                    <Button variant="contained" color="secondary" onClick={() => setOpen(false)} sx={{ mt: 2 }}>Close</Button>
-                </Box>
-            </Modal>
+            <Box className="flex justify-center mt-4">
+                <Pagination
+                    count={pagination.totalPages}
+                    page={pagination.page}
+                    onChange={(_, page) => setPagination(prev => ({ ...prev, page }))}
+                />
+            </Box>
         </Container>
     );
 };
 
-export default StudentsPayments;
+export default StudentsPaymentsList;

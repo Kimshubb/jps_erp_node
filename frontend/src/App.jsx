@@ -12,13 +12,15 @@ import Terms from './pages/Terms';
 import ManageFeeStructures from './pages/FeeStructure';
 import ProcessPayment from './pages/ProcessPayments';
 import PrintReceipt from './pages/PrintReceipt';
-import StudentsPayments from './pages/StudentPayments';
+import StudentsPaymentsList from './pages/StudentPayments';
+import  FeeStatement from './pages/FeesStatement';
 import EditStudent from './pages/EditStudent';
 import ManageUsers from './pages/ManageUsers';
 import AdditionalFeesPage from './pages/AdditionalFees';
 import AdditionalFees from './pages/AddFee';
 import ViewAddfees from './pages/ViewAddfees';
 import AssignSubjects from './pages/Assignsubjects';
+import StudentsPaymentsList from './pages/StudentPayments';
 
 
 const App = () => {
@@ -195,11 +197,21 @@ const App = () => {
                     element={
                         <ProtectedRoute>
                             <MainLayout>
-                                <StudentsPayments/>
+                                <StudentsPaymentsList/>
                             </MainLayout>
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/payments/:studentId/fee-statement"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                < FeeStatement />
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+               />
                 <Route
                     path="/payments/view-addfees"
                     element={
