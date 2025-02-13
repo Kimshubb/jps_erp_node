@@ -69,7 +69,7 @@ const StudentsPaymentsList = () => {
     };
 
     const handleViewStatement = (studentId) => {
-        navigate(`/payments/:studentId/fee-statement`);
+        navigate(`/payments/${studentId}/fee-statement`);
     };
 
     return (
