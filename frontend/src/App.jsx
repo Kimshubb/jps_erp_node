@@ -20,7 +20,6 @@ import AdditionalFeesPage from './pages/AdditionalFees';
 import AdditionalFees from './pages/AddFee';
 import ViewAddfees from './pages/ViewAddfees';
 import AssignSubjects from './pages/Assignsubjects';
-import StudentsPaymentsList from './pages/StudentPayments';
 
 
 const App = () => {
