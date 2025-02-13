@@ -527,7 +527,7 @@ const feeReports = async (req, res) => {
         });
     }
 };
-
+/** 
 const getStudentFeeStatement = async (req, res) => {
     console.log('///Starting getStudentFeeStatement controller');
     const { studentId } = req.params;
@@ -695,7 +695,7 @@ const getStudentFeeStatement = async (req, res) => {
             });
         }
     }
-};
+};*/
 
 /*
 // Fetches student payments with balance and carry-forward balance for the current term.
