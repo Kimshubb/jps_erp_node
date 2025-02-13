@@ -19,7 +19,7 @@ import {
     Alert,
     Pagination,
     Button,
-} from '@/components/ui/';
+} from '@mui/material';
 import axiosInstance from '../utils/axiosInstance';
 
 const StudentsPaymentsList = () => {

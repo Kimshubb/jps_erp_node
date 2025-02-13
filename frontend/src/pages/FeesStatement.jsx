@@ -14,7 +14,7 @@ import {
     TableRow,
     Grid,
     Button
-} from '@/components/ui/';
+} from '@mui/material';
 import axiosInstance from '../utils/axiosInstance';
 
 // Helper function to format currency
