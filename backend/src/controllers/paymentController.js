@@ -677,13 +677,23 @@ const getStudentFeeStatement = async (req, res) => {
     } catch (error) {
         console.error('Error in fee statement controller:', error);
         console.log('Error message:', error.message);
-        return res.status(
-            ['Student not found', 'No active term found', 'Fee structure not found for this grade']
-                .includes(error.message) ? 400 : 500
-        ).json({
-            success: false,
-            error: error.message
-        });
+    
+        if (error.message === 'Student not found') {
+            return res.status(400).json({ success: false, error: 'Student not found. Please check the student ID and try again.' });
+        } 
+        else if (error.message === 'No active term found') {
+            return res.status(400).json({ success: false, error: 'No active term found. Please ensure the school has set an active term.' });
+        } 
+        else if (error.message === 'Fee structure not found for this grade') {
+            return res.status(400).json({ success: false, error: 'Fee structure missing for this grade and term. Please contact administration.' });
+        } 
+        else {
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Internal Server Error. Please try again later.', 
+                details: error.stack 
+            });
+        }
     }
 };
 
