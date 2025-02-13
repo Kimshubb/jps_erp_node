@@ -205,9 +205,7 @@ const App = () => {
                     path="/payments/:studentId/fee-statement"
                     element={
                         <ProtectedRoute>
-                            <MainLayout>
                                 < FeeStatement />
-                            </MainLayout>
                         </ProtectedRoute>
                     }
                />
