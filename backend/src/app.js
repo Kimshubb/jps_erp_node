@@ -95,13 +95,13 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Serve static files from React build
+/**  Serve static files from React build
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 // Serve React frontend for all other routes
 app.get('*', (req, res) => {
    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});
+});*/
 
 // Server Configuration
 const PORT = process.env.PORT || 5000;
