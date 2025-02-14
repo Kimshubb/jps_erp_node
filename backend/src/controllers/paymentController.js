@@ -523,7 +523,7 @@ const feeReports = async (req, res) => {
         return res.status(error.message.includes('No active term') ? 400 : 500).json({ 
             success: false,
             message: error.message || 'An error occurred while generating fee reports.',
-            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            error: error.stack || undefined
         });
     }
 };
