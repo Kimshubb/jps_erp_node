@@ -27,7 +27,7 @@ router.get('/all-recent-payments', getAllPayments);
 // GET /api/payments/student/:studentId/receipt/:paymentId
 router.get('/student/:studentId/receipt/:paymentId', printReceipt);
 
-// Route to fetch a student fee statement
+//Route to fetch a student fee statement
 router.get('/:studentId/fee-statement', getStudentFeeStatement);
 
 
