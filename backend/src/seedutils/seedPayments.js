@@ -1,6 +1,6 @@
 require('dotenv').config();
 const prisma = require('../utils/prismaClient');
-const { fetchBalanceData, calculateBalance } = require('../utils/calculateBalance'); // Import utilities
+const calculateStudentBalance = require('../utils/CalculateFeeBalance'); // Import the updated function
 const { randomUUID } = require('crypto');
 
 const generatePaymentMethod = () => {
@@ -57,10 +57,11 @@ const populateStudentPayments = async (schoolId) => {
     };
 
     for (const student of students) {
-      // Fetch balance data for the student
-      const balanceData = await fetchBalanceData(student.id, currentTerm.id);
-      console.log(balanceData);
-      let updatedBalance = balanceData.cfBalance;
+      // Get the current balance using the updated function
+      const balanceData = await calculateStudentBalance(schoolId, student.id, currentTerm.id);
+      console.log(`📊 Balance for student ${student.id}:`, balanceData);
+
+      let updatedBalance = balanceData.currentBalance;
 
       // Randomly generate payments for the student
       const paymentCount = Math.floor(Math.random() * 3) + 1;
@@ -69,13 +70,13 @@ const populateStudentPayments = async (schoolId) => {
         const method = generatePaymentMethod();
         const amount = Math.floor(Math.random() * 5000) + 1000;
 
-        // Calculate the new balance after the payment
-        updatedBalance = calculateBalance({
-          cfBalance: updatedBalance,
-          standardFees: balanceData.standardFees,
-          additionalFees: balanceData.additionalFees,
-          paidAmount: amount,
-        });
+        // Deduct payment amount from balance
+        updatedBalance -= amount;
+
+        // Prevent negative balances
+        if (updatedBalance < 0) {
+          updatedBalance = 0;
+        }
 
         const paymentData = {
           method,
@@ -114,20 +115,21 @@ const populateStudentPayments = async (schoolId) => {
       }
     }
 
-    console.log('Student payment seeding completed:', paymentStats);
+    console.log('✅ Student payment seeding completed:', paymentStats);
     return paymentStats;
   } catch (error) {
-    console.error('Error populating student payments:', error);
+    console.error('❌ Error populating student payments:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
   }
 };
 
+// Run script if executed directly
 if (require.main === module) {
   const schoolId = parseInt(process.argv[2]);
   if (isNaN(schoolId)) {
-    console.error('Please provide a valid school ID');
+    console.error('❌ Please provide a valid school ID');
     process.exit(1);
   }
 
