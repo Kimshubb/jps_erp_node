@@ -94,15 +94,14 @@ class SchoolDataService {
             });
 
             if (!feeStructure) {
-                throw new Error('Fee structure not found for this grade');
+                console.warn(`⚠️ Fee structure not found for Grade ${gradeId}, Term ${termId}. Returning null.`);
+                return null;  // Instead of throwing an error, return null
             }
-
+    
             return feeStructure;
         } catch (error) {
             console.log('Error fetching fee structure:', error);
-            if (error.message === 'Fee structure not found for this grade') {
-                throw error;
-            }
+            console.error('Error fetching fee structure:', error);
             throw new Error(`Failed to fetch fee structure: ${error.message}`);
         }
     }

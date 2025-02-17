@@ -26,6 +26,9 @@ const calculateStudentBalance = async (schoolId, studentId, termId) => {
         // Fetch fee structure
         const feeStructure = await schoolDataService.getGradeFeeStructure(student.grade.id, termId);
         console.log('💰 Fee Structure:', feeStructure);
+        if (!feeStructure) {
+            console.warn(`⚠️ No fee structure found for Grade ${student.grade.id}, defaulting to zero fees.`);
+        }
 
         // Fetch payments
         const payments = await schoolDataService.getStudentTermPayments(studentId, termId);
