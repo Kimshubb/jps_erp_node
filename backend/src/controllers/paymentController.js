@@ -8,6 +8,7 @@ const QRCode = require('qrcode');
 const SchoolDataService = require('../utils/schoolDataService');
 const StudentFeeService = require('../utils/studentFeeService');
 const { Parser } = require('json2csv');
+const calculateStudentBalance = require('../utils/CalculateFeeBalance');
 
 
 const newPayment = async (req, res) => {
@@ -37,14 +38,7 @@ const newPayment = async (req, res) => {
             throw new Error('No active term found.');
         }
 
-        // Use StudentFeeService instead of separate functions
-        const feeService = new StudentFeeService(schoolId, studentId, currentTerm.id);
-        
-        // This will throw an error if student not found or inactive
-        await feeService.getBalanceData();
-
-        // Calculate current balance
-        const currentBalance = await feeService.calculateCurrentBalance();
+        balanceData = await calculateStudentBalance(schoolId, studentId, currentTerm.id);
 
         // Handle Mpesa transaction if applicable
         if (method === 'Mpesa' || method === 'Bank') {
@@ -64,7 +58,7 @@ const newPayment = async (req, res) => {
                 method,
                 amount,
                 code: (method === 'Mpesa' || method === 'Bank') ? code : null,
-                balance: currentBalance - amount,
+                balance: balanceData.currentBalance - amount,
                 schoolId,
                 studentId,
                 payDate: new Date(),
@@ -75,7 +69,7 @@ const newPayment = async (req, res) => {
         // Update student's carry forward balance
         await prisma.student.update({
             where: { id_schoolId: { id: studentId, schoolId } },
-            data: { cfBalance: Math.max(0, currentBalance - amount) }
+            data: { cfBalance: Math.max(0, balanceData.currentBalance - amount) }
         });
 
         return payment;
@@ -114,9 +108,8 @@ const printReceipt = async (req, res) => {
         }
 
         // Use StudentFeeService for balance calculation
-        const feeService = new StudentFeeService(schoolId, studentId, currentTerm.id);
-        const balanceData = await feeService.getBalanceData();
-        const currentBalance = await feeService.calculateCurrentBalance();
+    
+        const balanceData = await calculateStudentBalance(schoolId, studentId, currentTerm.id);
 
         if (parseInt(paymentId) === 0) {
             // Generate fee statement
@@ -139,8 +132,14 @@ const printReceipt = async (req, res) => {
                 },
                 termDetails: currentTerm,
                 payments,
-                totalPaid,
-                balance: currentBalance
+                totalPaid: balanceData.totalPaid,
+                balance: balanceData.currentBalance,
+                feeBreakdown: {
+                    standardFees: balanceData.standardFees,
+                    additionalFees: balanceData.additionalFees,
+                    cfBalance: balanceData.cfBalance,
+                    totalBilled: balanceData.totalBilled
+                }
             });
         } else {
             // Generate receipt for a specific payment
@@ -168,7 +167,13 @@ const printReceipt = async (req, res) => {
                 termDetails: currentTerm,
                 payment,
                 qrCode,
-                balance: currentBalance
+                balance: balanceData.currentBalance,
+                feeBreakdown: {
+                    standardFees: balanceData.standardFees,
+                    additionalFees: balanceData.additionalFees,
+                    cfBalance: balanceData.cfBalance,
+                    totalBilled: balanceData.totalBilled
+                }
             });
         }
     } catch (error) {
@@ -216,9 +221,8 @@ const studentPayments = async (req, res) => {
 
         const studentPaymentDetails = await Promise.all(
             students.map(async (student) => {
-                const feeService = new StudentFeeService(schoolId, student.id, termId);
-                const balanceData = await feeService.getBalanceData();
-                const balance = await feeService.calculateCurrentBalance();
+                const balanceData = await calculateStudentBalance(schoolId, student.id, termId);
+                const balance = balanceData.currentBalance;
 
                 return {
                     id: student.id,
@@ -527,100 +531,51 @@ const feeReports = async (req, res) => {
         });
     }
 };
-/** 
+
 const getStudentFeeStatement = async (req, res) => {
-    console.log('///Starting getStudentFeeStatement controller');
+    console.log('/// Starting getStudentFeeStatement controller');
     const { studentId } = req.params;
     const schoolId = req.user.schoolId;
     console.log('Request params:', { studentId, schoolId });
-    console.log('User from request:', req.user);
 
     try {
-        console.log(`Generating fee statement for student ${studentId}`);
-        
+        console.log(`🔍 Fetching student fee statement for ${studentId}`);
+        // Initialize SchoolDataService with the authenticated user's schoolId
+        const schoolDataService = new SchoolDataService(schoolId);
+
         // Get current term
-        const currentTerm = await prisma.term.findFirst({
-            where: { 
-                schoolId,
-                current: true 
-            }
-        });
-        console.log('Current term:', currentTerm);
-        
+        const currentTerm = await schoolDataService.getCurrentTerm();
         if (!currentTerm) {
             throw new Error('No active term found');
         }
+        console.log('📅 Current Term:', currentTerm);
 
-        // Get student details with relations
-        const student = await prisma.student.findFirst({
-            where: { 
-                id: studentId, 
-                schoolId 
-            },
-            include: {
-                grade: true,
-                stream: true,
-                additionalFees: true
-            },
-        });
-        console.log('Student details:', student);
+        // Fetch student details
+        const student = await schoolDataService.getStudentDetails(studentId);
+        console.log('👩‍🎓 Student Details:', student);
 
-        if (!student) {
-            throw new Error('Student not found');
-        }
-        console.log('Student found:', student);
-
-        // Get fee structure
-        const feeStructure = await prisma.feeStructure.findFirst({
-            where: {
-                gradeId: student.gradeId,
-                termId: currentTerm.id,
-                schoolId
-            }
-        });
-        console.log('Fee structure:', feeStructure);
-
+        // Fetch fee structure for the grade
+        const feeStructure = await schoolDataService.getGradeFeeStructure(student.gradeId, currentTerm.id);
         if (!feeStructure) {
             throw new Error('Fee structure not found for this grade');
         }
 
-        // Get payments
+        // Calculate balance using the utility function
+        const balanceData = await calculateStudentBalance(schoolId, studentId, currentTerm.id);
+        console.log('💰 Balance Data:', balanceData);
+
+        // Get payments for the current term
         const payments = await prisma.feePayment.findMany({
             where: {
                 studentId,
                 termId: currentTerm.id,
                 schoolId
             },
-            orderBy: {
-                payDate: 'asc'
-            }
+            orderBy: { payDate: 'asc' }
         });
-        console.log('Payments:', payments);
+        console.log('💳 Payments:', payments);
 
-        // Calculate totals
-        const regularFees = feeStructure.tuitionFee + 
-                          feeStructure.assBooks + 
-                          feeStructure.diaryFee + 
-                          feeStructure.activityFee + 
-                          feeStructure.others;
-        console.log('Regular fees:', regularFees);
-
-        const totalAdditionalFees = student.additionalFees.reduce(
-            (sum, fee) => sum + fee.amount, 
-            0
-        );
-        console.log('Additional fees:', totalAdditionalFees);
-
-        const totalBilled = regularFees + totalAdditionalFees;
-        const totalPaid = payments.reduce(
-            (sum, payment) => sum + payment.amount, 
-            0
-        );
-        
-        console.log('Total billed:', totalBilled);
-        const currentBalance = (student.cfBalance + totalBilled) - totalPaid;
-        console.log('Current balance:', currentBalance);
-        
+        // Prepare the fee statement
         const statement = {
             termInfo: {
                 id: currentTerm.id,
@@ -635,7 +590,7 @@ const getStudentFeeStatement = async (req, res) => {
             },
             billing: {
                 regularFees: {
-                    total: regularFees,
+                    total: balanceData.standardFees,
                     breakdown: {
                         tuitionFee: feeStructure.tuitionFee,
                         assessmentBooks: feeStructure.assBooks,
@@ -648,8 +603,8 @@ const getStudentFeeStatement = async (req, res) => {
                     name: fee.feeName,
                     amount: fee.amount
                 })),
-                totalBilled,
-                carriedForwardBalance: student.cfBalance
+                totalBilled: balanceData.totalBilled,
+                carriedForwardBalance: balanceData.cfBalance
             },
             payments: payments.map(payment => ({
                 date: payment.payDate,
@@ -659,43 +614,57 @@ const getStudentFeeStatement = async (req, res) => {
                 runningBalance: payment.balance
             })),
             summary: {
-                totalRegularFees: regularFees,
-                totalAdditionalFees,
-                totalBilled,
-                totalPaid,
-                carriedForwardBalance: student.cfBalance,
-                currentBalance
+                totalRegularFees: balanceData.standardFees,
+                totalAdditionalFees: balanceData.additionalFees,
+                totalBilled: balanceData.totalBilled,
+                totalPaid: balanceData.totalPaid,
+                carriedForwardBalance: balanceData.cfBalance,
+                currentBalance: balanceData.currentBalance
             }
         };
 
-        console.log('Fee statement generated successfully');
-        return res.status(200).json({
-            success: true,
-            data: statement
-        });
+        console.log('✅ Fee statement generated successfully');
+        return res.status(200).json({ success: true, data: statement });
 
     } catch (error) {
-        console.error('Error in fee statement controller:', error);
-        console.log('Error message:', error.message);
-    
-        if (error.message === 'Student not found') {
-            return res.status(400).json({ success: false, error: 'Student not found. Please check the student ID and try again.' });
-        } 
-        else if (error.message === 'No active term found') {
-            return res.status(400).json({ success: false, error: 'No active term found. Please ensure the school has set an active term.' });
-        } 
-        else if (error.message === 'Fee structure not found for this grade') {
-            return res.status(400).json({ success: false, error: 'Fee structure missing for this grade and term. Please contact administration.' });
-        } 
-        else {
-            return res.status(500).json({ 
-                success: false, 
-                error: 'Internal Server Error. Please try again later.', 
-                details: error.stack 
+        console.error('❌ Error in fee statement controller:', error.message);
+        
+        const errorResponse = {
+            success: false,
+            error: error.message
+        };
+
+        // Map specific errors to appropriate responses
+        const errorMap = {
+            'Student not found': {
+                status: 400,
+                message: 'Student not found. Please check the student ID and try again.'
+            },
+            'No active term found': {
+                status: 400,
+                message: 'No active term found. Please ensure the school has set an active term.'
+            },
+            'Fee structure not found for this grade': {
+                status: 400,
+                message: 'Fee structure missing for this grade and term. Please contact administration.'
+            }
+        };
+
+        const mappedError = errorMap[error.message];
+        if (mappedError) {
+            return res.status(mappedError.status).json({ 
+                ...errorResponse, 
+                error: mappedError.message 
             });
         }
+
+        return res.status(500).json({ 
+            ...errorResponse, 
+            error: 'Internal Server Error. Please try again later.', 
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
-};*/
+};
 
 /*
 // Fetches student payments with balance and carry-forward balance for the current term.

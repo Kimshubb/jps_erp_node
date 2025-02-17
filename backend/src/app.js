@@ -9,7 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const mainRoutes = require('./routes/mainRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
-//const paymentRoutes = require('./routes/paymentRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const imageRoutes = require('./routes/imageRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
 const blogRoutes = require('./routes/blogRoutes');
@@ -63,7 +63,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api', isAuthenticated, mainRoutes); // Protected main routes
 app.use('/api/students', studentRoutes); // Protected student routes
 app.use('/api/settings', isAuthenticated, settingsRoutes); // Protected settings routes
-//app.use('/api/payments', isAuthenticated, paymentRoutes); // Protected payment routes
+app.use('/api/payments', isAuthenticated, paymentRoutes); // Protected payment routes
 app.use('/api/teachers', isAuthenticated, teacherRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/resources', resourceRoutes);
@@ -82,7 +82,7 @@ app.get('/api', (req, res) => {
             dashboard: '/api/dashboard',
            // students: '/api/students/*',
             settings: '/api/settings/*',
-            //payments: '/api/payments/*',
+            payments: '/api/payments/*',
 
         }
     });
