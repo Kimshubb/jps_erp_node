@@ -608,24 +608,24 @@ class SchoolDataService {
 
         return Promise.all(grades.map(async (grade) => {
             const [feeStructure, additionalFees, payments] = await Promise.all([
-                grade.feeStructure[0], // From the included relation
+                grade.feeStructure?.[0] || null, // From the included relation or null
                 this.getGradeAdditionalFees(grade.id),
                 this.getGradePayments(grade.id, termId)
             ]);
 
             const basicFees = feeStructure ? {
-                tuitionFee: feeStructure.tuitionFee,
-                assBooks: feeStructure.assBooks,
-                diaryFee: feeStructure.diaryFee,
-                activityFee: feeStructure.activityFee,
-                others: feeStructure.others,
-                total: feeStructure.tuitionFee + 
-                       feeStructure.assBooks + 
-                       feeStructure.diaryFee + 
-                       feeStructure.activityFee + 
-                       feeStructure.others
-            } : { total: 0 };
-
+                tuitionFee: feeStructure.tuitionFee || 0,
+                assBooks: feeStructure.assBooks || 0,
+                diaryFee: feeStructure.diaryFee || 0,
+                activityFee: feeStructure.activityFee || 0,
+                others: feeStructure.others || 0,
+                total: (feeStructure.tuitionFee || 0) + 
+                       (feeStructure.assBooks || 0) + 
+                       (feeStructure.diaryFee || 0) + 
+                       (feeStructure.activityFee || 0) + 
+                       (feeStructure.others || 0)
+            } : { tuitionFee: 0, assBooks: 0, diaryFee: 0, activityFee: 0, others: 0, total: 0 };
+            
             return {
                 gradeId: grade.id,
                 gradeName: grade.name,
