@@ -74,7 +74,7 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
         { label: 'View Payments', icon: <ViewListIcon />, path: '/payments/view' },
         { label: 'New Payment', icon: <AddIcon />, path: '/payments/new' },
         { label: 'Add Fee Lists', icon: <AddIcon />, path: '/payments/view-addfees' },
-        { label: 'Fees Reports', icon: <ReportsIcon />, path: '/payments/reports' },
+        { label: 'Fees Reports', icon: <ReportsIcon />, path: '/payments/fee-reports' },
       ],
     },
     {
