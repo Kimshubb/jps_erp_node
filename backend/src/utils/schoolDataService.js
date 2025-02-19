@@ -36,6 +36,27 @@ class SchoolDataService {
             throw new Error('Failed to fetch current term');
         }
     }
+    /**
+     * Get the previous term based on start date
+     * @param {Date} currentStartDate - Start date of current term
+     * @returns {Promise<Object|null>} Previous term or null if none exists
+     */
+    async getPreviousTerm(currentStartDate) {
+        // Find the previous term based on start date
+        const previousTerm = await prisma.term.findFirst({
+            where: {
+                schoolId: this.schoolId,
+                startDate: {
+                    lt: currentStartDate
+                }
+            },
+            orderBy: {
+                startDate: 'desc'
+            }
+        });
+        
+        return previousTerm || null;
+    }
      /**
      * Get student details with grade and stream information
      * @param {string} studentId 
