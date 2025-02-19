@@ -20,6 +20,7 @@ import AdditionalFeesPage from './pages/AdditionalFees';
 import AdditionalFees from './pages/AddFee';
 import ViewAddfees from './pages/ViewAddfees';
 import AssignSubjects from './pages/Assignsubjects';
+import FeeReportsDashboard from './pages/FeeReports';
 
 
 const App = () => {
@@ -215,6 +216,16 @@ const App = () => {
                         <ProtectedRoute>
                             <MainLayout>
                                 <ViewAddfees/>
+                            </MainLayout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/payments/fee-reports"
+                    element={
+                        <ProtectedRoute>
+                            <MainLayout>
+                                <FeeReportsDashboard/>
                             </MainLayout>
                         </ProtectedRoute>
                     }
