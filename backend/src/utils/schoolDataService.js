@@ -606,6 +606,8 @@ class SchoolDataService {
                 feeStructure: true
             }
         });
+        console.log('grades with fee structures', grades);
+        
         return Promise.all(grades.map(async (grade) => {
             const [feeStructure, additionalFees, payments] = await Promise.all([
                 grade.feeStructure?.[0] || null, // From the included relation or null
