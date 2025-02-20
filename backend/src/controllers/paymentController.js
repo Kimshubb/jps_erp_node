@@ -230,7 +230,7 @@ const studentPayments = async (req, res) => {
                     grade: student.grade.name,
                     gradeId: student.grade.id,
                     stream: student.stream?.name || 'N/A',
-                    totalPaid: balanceData.paidAmount,
+                    totalPaid: balanceData.totalPaid,
                     balance
                 };
             })
