@@ -597,11 +597,10 @@ class SchoolDataService {
      * @returns {Promise<Array>} Grade details with fees
      */
     async getGradeDetailsWithFees(termId) {
-        const currentTerm = await this.getCurrentTerm();
         const grades = await prisma.grade.findMany({
             where: { 
                 schoolId: this.schoolId,
-                feeStructure: { termId: currentTerm.id } 
+                feeStructure: { termId } 
             },
             include: {
                 feeStructure: true
@@ -611,7 +610,7 @@ class SchoolDataService {
 
         return Promise.all(grades.map(async (grade) => {
             const [feeStructure, additionalFees, payments] = await Promise.all([
-                grade.feeStructure?.[0] || null, // From the included relation or null
+                grade.feeStructure || null, // From the included relation or null
                 this.getGradeAdditionalFees(grade.id),
                 this.getGradePayments(grade.id, termId)
             ]);
