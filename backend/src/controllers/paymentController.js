@@ -183,14 +183,13 @@ const printReceipt = async (req, res) => {
 };
 
 const studentPayments = async (req, res) => {
-    console.log('Filter params:', { gradeFilter, streamFilter, termFilter });
     const gradeFilter = req.query.grade || 'all';
     const streamFilter = req.query.stream || 'all';
     const termFilter = req.query.term || 'current';
     const page = parseInt(req.query.page) || 1;
     const perPage = 15;
     const schoolId = req.user.schoolId;
-
+    console.log('Filter params:', { gradeFilter, streamFilter, termFilter });
 
     try {
         let termId;
