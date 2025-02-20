@@ -183,12 +183,14 @@ const printReceipt = async (req, res) => {
 };
 
 const studentPayments = async (req, res) => {
+    console.log('Filter params:', { gradeFilter, streamFilter, termFilter });
     const gradeFilter = req.query.grade || 'all';
     const streamFilter = req.query.stream || 'all';
     const termFilter = req.query.term || 'current';
     const page = parseInt(req.query.page) || 1;
     const perPage = 15;
     const schoolId = req.user.schoolId;
+
 
     try {
         let termId;
@@ -209,6 +211,7 @@ const studentPayments = async (req, res) => {
             ...(gradeFilter !== 'all' && { gradeId: parseInt(gradeFilter) }),
             ...(streamFilter !== 'all' && { streamId: parseInt(streamFilter) })
         };
+        console.log('Student filters:', studentFilters);
 
         const students = await prisma.student.findMany({
             where: studentFilters,
@@ -216,14 +219,17 @@ const studentPayments = async (req, res) => {
             take: perPage,
             include: { grade: true, stream: true }
         });
+        console.log(`Found ${students.length} students matching filters`);
 
         const totalStudents = await prisma.student.count({ where: studentFilters });
 
         const studentPaymentDetails = await Promise.all(
             students.map(async (student) => {
+                console.log(`Processing student: ${student.id}, Grade: ${student.grade.name}`);
                 const balanceData = await calculateStudentBalance(schoolId, student.id, termId);
+                console.log(`Balance data for student ${student.id}:`, balanceData);
                 const balance = balanceData.currentBalance;
-
+                
                 return {
                     id: student.id,
                     fullName: student.fullName,

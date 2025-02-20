@@ -32,7 +32,7 @@ const calculateStudentBalance = async (schoolId, studentId, termId) => {
 
         // Fetch payments
         const payments = await schoolDataService.getStudentTermPayments(studentId, termId);
-        console.log('💳 Payments:', payments);
+        console.log('Raw payments data:', payments);
 
         // Calculate fees
         const standardFees = (feeStructure.tuitionFee || 0) +
