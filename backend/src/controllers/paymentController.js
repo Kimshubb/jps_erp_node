@@ -236,13 +236,19 @@ const studentPayments = async (req, res) => {
             })
         );
 
-        const validGradeIds = studentPaymentDetails
-            .map((s) => s.gradeId)
-            .filter((id) => id !== undefined);
-
         const streams = await prisma.stream.findMany({
             where: {
-                gradeId: { in: validGradeIds }
+                grade: {
+                    schoolId
+                }
+            },
+            include: {
+                grade: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
             }
         });
 
