@@ -189,6 +189,7 @@ const FeeReportsDashboard = () => {
             const paymentPercentage = calculatePaymentPercentage(grade);
             const progressColor = getColorForPercentage(paymentPercentage);
             const totalStudents = safelyGetNestedProp(grade, 'totalActiveStudents', 0);
+
             const totalRequired = (safelyGetNestedProp(grade, 'basicFees.total', 0) * totalStudents) + 
                       safelyGetNestedProp(grade, 'additionalFees.total', 0);
             const totalPaid = safelyGetNestedProp(grade, 'payments.total', 0);

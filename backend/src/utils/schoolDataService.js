@@ -572,13 +572,12 @@ class SchoolDataService {
                 paymentMethodComparison,
                 termComparison,
                 additionalFeesComparison,
-                activestudents
+                
             ] = await Promise.all([
                 this.getGradeDetailsWithFees(currentTerm.id),
                 this.getPaymentMethodComparison(currentTerm.id, previousTerm?.id),
                 this.getTermComparison(currentTerm.id, previousTerm?.id),
                 this.getAdditionalFeesComparison(),
-                this.getActiveStudents(currentTerm.id)
             ]);
 
             return {
@@ -586,7 +585,6 @@ class SchoolDataService {
                 paymentMethodComparison,
                 termComparison,
                 additionalFeesComparison,
-                activestudents
             };
         } catch (error) {
             console.error('Error generating fee report data:', error);
@@ -602,24 +600,34 @@ class SchoolDataService {
     async getGradeDetailsWithFees(termId) {
         const grades = await prisma.grade.findMany({
             where: { 
-                schoolId: this.schoolId,
-                feeStructure: { termId } 
+                schoolId: this.schoolId
             },
             include: {
-                feeStructure: true
+                feeStructure: {
+                    where: { termId } 
+                },
+                students: {
+                    where: { status: 'active' }, 
+                    select: { id: true }
+                }
             }
         });
-        console.log('grades with fee structures', grades);
-
+    
+        console.log('Grades with fee structures:', grades);
+    
         return Promise.all(grades.map(async (grade) => {
-            const [feeStructure, additionalFees, payments] = await Promise.all([
-                grade.feeStructure || null, // From the included relation or null
+            const totalActiveStudents = grade.students.length;
+    
+            // ✅ Access the fee structure directly (it's a single object, not an array)
+            const feeStructure = grade.feeStructure || null;
+    
+            const [additionalFees, payments] = await Promise.all([
                 this.getGradeAdditionalFees(grade.id),
                 this.getGradePayments(grade.id, termId)
             ]);
-
+    
             const basicFees = feeStructure ? {
-               tuitionFee: feeStructure.tuitionFee || 0,
+                tuitionFee: feeStructure.tuitionFee || 0,
                 assBooks: feeStructure.assBooks || 0,
                 diaryFee: feeStructure.diaryFee || 0,
                 activityFee: feeStructure.activityFee || 0,
@@ -630,10 +638,11 @@ class SchoolDataService {
                        (feeStructure.activityFee || 0) + 
                        (feeStructure.others || 0)
             } : { tuitionFee: 0, assBooks: 0, diaryFee: 0, activityFee: 0, others: 0, total: 0 };
-
+    
             return {
                 gradeId: grade.id,
                 gradeName: grade.name,
+                totalActiveStudents, // Include active student count
                 basicFees,
                 additionalFees,
                 payments: {
@@ -643,6 +652,7 @@ class SchoolDataService {
             };
         }));
     }
+    
 
     /**
      * Get additional fees for a grade's students
