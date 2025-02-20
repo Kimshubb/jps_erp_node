@@ -571,19 +571,22 @@ class SchoolDataService {
                 gradeDetails,
                 paymentMethodComparison,
                 termComparison,
-                additionalFeesComparison
+                additionalFeesComparison,
+                activestudents
             ] = await Promise.all([
                 this.getGradeDetailsWithFees(currentTerm.id),
                 this.getPaymentMethodComparison(currentTerm.id, previousTerm?.id),
                 this.getTermComparison(currentTerm.id, previousTerm?.id),
-                this.getAdditionalFeesComparison()
+                this.getAdditionalFeesComparison(),
+                this.getActiveStudents(currentTerm.id)
             ]);
 
             return {
                 gradeDetails,
                 paymentMethodComparison,
                 termComparison,
-                additionalFeesComparison
+                additionalFeesComparison,
+                activestudents
             };
         } catch (error) {
             console.error('Error generating fee report data:', error);
@@ -616,7 +619,7 @@ class SchoolDataService {
             ]);
 
             const basicFees = feeStructure ? {
-                tuitionFee: feeStructure.tuitionFee || 0,
+               tuitionFee: feeStructure.tuitionFee || 0,
                 assBooks: feeStructure.assBooks || 0,
                 diaryFee: feeStructure.diaryFee || 0,
                 activityFee: feeStructure.activityFee || 0,
@@ -667,7 +670,7 @@ class SchoolDataService {
                     });
                 } else {
                     const existing = feesMap.get(fee.feeName);
-                    existing.count += 1;
+                     existing.count += 1;
                 }
             });
         });
