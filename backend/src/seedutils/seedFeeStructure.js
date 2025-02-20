@@ -3,7 +3,7 @@
 //  - Fee components are calculated based on grade level
 //  - Requires a valid school ID as an argument
 //  - Run this script with the command `node seedFeeStructures.js <schoolId>`
-//  - Example: `node seedFeeStructures.js 1`
+//  - Example: `node src/seedutils/seedFeeStructure.js 1`
 // src/seedutils/seedFeeStructures.js
 require('dotenv').config();
 const prisma = require('../utils/prismaClient');
@@ -82,10 +82,9 @@ const populateFeeStructures = async (schoolId) => {
       // Check if fee structure already exists
       const existingFeeStructure = await prisma.feeStructure.findUnique({
         where: {
-          unique_school_grade: {
-            schoolId: schoolId,
-            gradeId: grade.id
-          }
+          schoolId: schoolId,
+          gradeId: grade.id,
+          termId: currentTerm.id
         }
       });
 
