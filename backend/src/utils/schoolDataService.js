@@ -607,7 +607,7 @@ class SchoolDataService {
                     where: { termId } 
                 },
                 students: {
-                    where: { status: 'active' }, 
+                    where: { active: true }, 
                     select: { id: true }
                 }
             }
