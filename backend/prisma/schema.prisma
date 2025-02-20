@@ -61,7 +61,7 @@ model Grade {
   schoolId     Int           @map("school_id")
   school       School        @relation(fields: [schoolId], references: [id])
   streams      Stream[]
-  feeStructure FeeStructure?
+  feeStructure FeeStructure[]
   students     Student[]
   subjects     Subject[]
 }
