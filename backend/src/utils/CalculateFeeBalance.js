@@ -35,11 +35,13 @@ const calculateStudentBalance = async (schoolId, studentId, termId) => {
         console.log('Raw payments data:', payments);
 
         // Calculate fees
-        const standardFees = (feeStructure.tuitionFee || 0) +
-                             (feeStructure.assBooks || 0) +
-                             (feeStructure.diaryFee || 0) +
-                             (feeStructure.activityFee || 0) +
-                             (feeStructure.others || 0);
+        const standardFees = feeStructure ? (
+            (feeStructure.tuitionFee || 0) +
+            (feeStructure.assBooks || 0) +
+            (feeStructure.diaryFee || 0) +
+            (feeStructure.activityFee || 0) +
+            (feeStructure.others || 0)
+          ) : 0;
 
         const additionalFees = student.additionalFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
         const totalBilled = standardFees + additionalFees;
