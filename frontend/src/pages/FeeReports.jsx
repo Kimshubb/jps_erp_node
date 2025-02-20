@@ -77,14 +77,19 @@ const FeeReportsDashboard = () => {
   // Calculate payment percentage for a grade with division by zero protection
   const calculatePaymentPercentage = (grade) => {
     try {
-      const totalFees = (grade?.basicFees?.total || 0) + (grade?.additionalFees?.total || 0);
-      const totalPayments = grade?.payments?.total || 0;
-      
-      if (totalFees === 0) return 0;
-      return Math.min(100, Math.round((totalPayments / totalFees) * 100));
+        const totalStudents = safelyGetNestedProp(grade, 'totalActiveStudents', 0);
+        const basicFeesTotal = safelyGetNestedProp(grade, 'basicFees.total', 0);
+        const additionalFeesTotal = safelyGetNestedProp(grade, 'additionalFees.total', 0);
+        const totalPaid = safelyGetNestedProp(grade, 'payments.total', 0);
+
+        // ✅ Correctly calculate total required fees
+        const totalRequired = (basicFeesTotal * totalStudents) + additionalFeesTotal;
+
+        if (totalRequired === 0) return 0;
+        return Math.min(100, Math.round((totalPaid / totalRequired) * 100));
     } catch (err) {
-      console.error('Error calculating payment percentage:', err);
-      return 0;
+        console.error('Error calculating payment percentage:', err);
+        return 0;
     }
   };
 
