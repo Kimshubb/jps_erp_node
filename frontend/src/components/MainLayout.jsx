@@ -183,6 +183,7 @@ const MainLayout = ({ children }) => {
                 <Topbar 
                     user={user}
                     currentTerm={currentTerm}
+                    schoolName={schoolName}
                     isMiniVariant={isMiniVariant}
                     onMenuClick={handleSidebarToggle}
                     showMenuIcon={isMobile}
