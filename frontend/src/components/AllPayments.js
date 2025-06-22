@@ -31,7 +31,7 @@ const AllPayments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await axiosInstance.get('/api/payments/recent_payments', {
+      const response = await axiosInstance.get('/api/payments/all-recent-payments', {
         params: {
           page: pageNumber,
           limit: 10 // You can make this configurable if needed

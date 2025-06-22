@@ -7,9 +7,8 @@ import {
   ListItemText,
   Collapse,
   Divider,
-  Typography,
-  IconButton,
   Tooltip,
+  IconButton,
   useTheme,
   useMediaQuery
 } from '@mui/material';
@@ -25,20 +24,24 @@ import {
   Add as AddIcon,
   BarChart as ReportsIcon,
   Tune as ConfigureIcon,
-  Brightness4 as ThemeIcon,
-  People as PeopleIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon
+  ChevronRight as ChevronRightIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
+const SIDEBAR_WIDTH = 280;
+const SIDEBAR_MINI_WIDTH = 64;
+const TOPBAR_HEIGHT = 70;
+
+function Sidebar({ isMiniVariant, onMiniVariantToggle }) {
   const [open, setOpen] = useState({
     students: false,
     fees: false,
     settings: false,
     teachers: false
   });
+
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -46,13 +49,11 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
 
   const handleClick = (section) => {
     if (isMiniVariant) {
-      // In mini variant, navigate to the first child route (if available)
       const menuItem = menuItems.find((item) => item.label.toLowerCase() === section);
       if (menuItem?.children?.[0]?.path) {
         navigate(menuItem.children[0].path);
       }
     } else {
-      // In expanded state, toggle the collapsible section
       setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
     }
   };
@@ -103,21 +104,20 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
     const isActive = location.pathname === item.path;
     const itemProps = {
       sx: {
-        ...(!isChild && {
-          borderRadius: 1,
-          margin: '4px 1px',
-          '&:hover': {
-            backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          },
-        }),
         ...(isActive && {
           backgroundColor: 'rgba(0, 0, 0, 0.08)',
           fontWeight: 'bold',
         }),
+        borderRadius: 1,
+        mx: 1,
+        mb: 0.5,
         color: 'inherit',
-        minHeight: isMiniVariant && !isChild ? '48px' : 'auto',
         justifyContent: isMiniVariant ? 'center' : 'flex-start',
         px: isMiniVariant ? 1 : 2,
+        minHeight: isMiniVariant ? 48 : 'auto',
+        '&:hover': {
+          backgroundColor: 'action.hover',
+        },
       },
     };
 
@@ -125,16 +125,15 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
       return (
         <React.Fragment key={index}>
           <Tooltip title={isMiniVariant ? item.label : ''} placement="right">
-            <ListItem 
-              button 
-              {...itemProps}
-              onClick={() => handleClick(item.label.toLowerCase())}
-            >
-              <ListItemIcon sx={{ 
-                color: 'inherit',
-                minWidth: isMiniVariant ? 'auto' : 40,
-                mr: isMiniVariant ? 0 : 2 
-              }}>
+            <ListItem button {...itemProps} onClick={() => handleClick(item.label.toLowerCase())}>
+              <ListItemIcon
+                sx={{
+                  color: 'inherit',
+                  minWidth: isMiniVariant ? 0 : 40,
+                  mr: isMiniVariant ? 0 : 2,
+                  justifyContent: 'center'
+                }}
+              >
                 {item.icon}
               </ListItemIcon>
               {!isMiniVariant && (
@@ -158,17 +157,15 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
 
     return (
       <Tooltip title={isMiniVariant ? item.label : ''} placement="right" key={index}>
-        <ListItem
-          button
-          component={Link}
-          to={item.path}
-          {...itemProps}
-        >
-          <ListItemIcon sx={{ 
-            color: 'inherit',
-            minWidth: isMiniVariant ? 'auto' : 40,
-            mr: isMiniVariant ? 0 : 2 
-          }}>
+        <ListItem button component={Link} to={item.path} {...itemProps}>
+          <ListItemIcon
+            sx={{
+              color: 'inherit',
+              minWidth: isMiniVariant ? 0 : 40,
+              mr: isMiniVariant ? 0 : 2,
+              justifyContent: 'center'
+            }}
+          >
             {item.icon}
           </ListItemIcon>
           {!isMiniVariant && <ListItemText primary={item.label} />}
@@ -179,58 +176,36 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
 
   return (
     <Box
-      className="sidebar-container"
       sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        position: 'relative',
-        transition: theme.transitions.create(['width', 'margin'], {
+        width: isMiniVariant ? SIDEBAR_MINI_WIDTH : SIDEBAR_WIDTH,
+        height: '100vh',
+        bgcolor: 'background.default',
+        borderRight: '1px solid',
+        borderColor: 'divider',
+        overflowX: 'hidden',
+        pt: `${TOPBAR_HEIGHT}px`,
+        transition: theme.transitions.create('width', {
           easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
+          duration: theme.transitions.duration.standard,
         }),
-        ...(isExtraLargeScreen ? {
-          pt: 2, // Add top padding for extra large screens
-        } : {})
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: theme.zIndex.drawer - 1,
       }}
     >
-      {/* Header */}
-      {!isMiniVariant && (
-        <>
-          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
-            ...(isExtraLargeScreen ? {
-              px: 3, // Slightly more horizontal padding on extra large screens
-            } : {})
-          }}>
-            <Typography variant="h6" noWrap component="div">
-              {schoolName || 'School Name'}
-            </Typography>
-            <IconButton onClick={onMiniVariantToggle} size="small">
-              <ThemeIcon />
-            </IconButton>
-          </Box>
-          <Divider />
-        </>
-      )}
-
-      {/* Collapse Toggle Button */}
+      {/* Mini Variant Toggle Button */}
       <IconButton
         onClick={onMiniVariantToggle}
         sx={{
           position: 'absolute',
+          bottom: 20,
           right: -15,
-          top: isExtraLargeScreen ? 30 : 20,
+          zIndex: 10,
           bgcolor: 'background.paper',
           border: '1px solid',
           borderColor: 'divider',
-          '&:hover': {
-            bgcolor: 'background.paper',
-          },
-          zIndex: 1,
-          ...(isExtraLargeScreen ? {
-            right: -20, // Slightly adjusted for extra large screens
-          } : {})
+          boxShadow: 2,
         }}
         size="small"
       >
@@ -238,34 +213,7 @@ function Sidebar({ schoolName, isMiniVariant, onMiniVariantToggle }) {
       </IconButton>
 
       {/* Menu Items */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto',
-        ...(isExtraLargeScreen ? {
-          px: isMiniVariant ? 1 : 2, // Adjust horizontal padding
-        } : {})
-      }}
-      >
-        <List 
-          sx={{
-            ...(isExtraLargeScreen ? {
-              py: 1, // Slightly reduce vertical padding
-            } : {})
-          }}
-        >
-          {menuItems.map((item, index) => renderMenuItem(item, index))}
-        </List>
-      </Box>
-
-      {/* Footer */}
-      {!isMiniVariant && (
-        <>
-          <Divider />
-          <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">
-              © 2024 School Management System
-            </Typography>
-          </Box>
-        </>
-      )}
+      <List>{menuItems.map((item, index) => renderMenuItem(item, index))}</List>
     </Box>
   );
 }

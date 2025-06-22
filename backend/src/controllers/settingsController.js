@@ -186,6 +186,7 @@ const manageFeeStructure = async (req, res) => {
                     schoolId,
                 },
             });
+            console.log()
 
             res.json({ success: true, message: 'Fee structure created successfully!', feeStructure });
         } catch (error) {

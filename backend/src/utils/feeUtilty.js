@@ -1,4 +1,4 @@
-const prisma = require('../utils/prismaClient');
+const prisma = require('./prismaClient');
 
 class FeesUtility {
     static async getGradeInfo(grade, currentTerm, schoolId) {

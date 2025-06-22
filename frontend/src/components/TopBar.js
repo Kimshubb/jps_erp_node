@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Stack,
-  IconButton,
-  useTheme,
+import { 
+  AppBar, 
+  Toolbar, 
+  Typography, 
+  Stack, 
+  IconButton, 
+  useTheme, 
   useMediaQuery,
   Box,
   Avatar,
@@ -18,7 +18,7 @@ import {
   Divider,
   Button
 } from '@mui/material';
-import {
+import { 
   Menu as MenuIcon,
   Notifications as NotificationsIcon,
   Assignment as AssignmentIcon,
@@ -27,6 +27,12 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 
+const SIDEBAR_WIDTH = {
+  expanded: 250,
+  collapsed: 64
+};
+
+// Mock notifications - replace with your actual notifications data
 const mockNotifications = [
   {
     id: 1,
@@ -66,20 +72,18 @@ const mockNotifications = [
   }
 ];
 
-const Topbar = ({
-  user,
-  currentTerm,
-  schoolName,
-  isMiniVariant,
+const Topbar = ({ 
+  user, 
+  currentTerm, 
+  isCollapsed = false, 
   onMenuClick,
-  showMenuIcon,
-  sidebarWidth
+  showMenuIcon = false 
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifications, setNotifications] = useState(mockNotifications);
-
+  
   const unreadCount = notifications.filter(notif => !notif.read).length;
   const open = Boolean(anchorEl);
 
@@ -92,7 +96,7 @@ const Topbar = ({
   };
 
   const handleMarkAsRead = (notificationId) => {
-    setNotifications(notifications.map(notif =>
+    setNotifications(notifications.map(notif => 
       notif.id === notificationId ? { ...notif, read: true } : notif
     ));
   };
@@ -102,9 +106,9 @@ const Topbar = ({
   };
 
   const NotificationItem = ({ notification }) => (
-    <ListItem
+    <ListItem 
       alignItems="flex-start"
-      sx={{
+      sx={{ 
         bgcolor: notification.read ? 'transparent' : 'action.hover',
         '&:hover': {
           bgcolor: 'action.selected',
@@ -116,42 +120,57 @@ const Topbar = ({
         {notification.icon}
       </ListItemAvatar>
       <ListItemText
-        primary={<Typography variant="subtitle2">{notification.title}</Typography>}
+        primary={
+          <Typography variant="subtitle2" component="div">
+            {notification.title}
+          </Typography>
+        }
         secondary={
-          <>
-            <Typography variant="body2" color="text.primary">{notification.message}</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+          <React.Fragment>
+            <Typography
+              variant="body2"
+              color="text.primary"
+              component="span"
+            >
+              {notification.message}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="div"
+              sx={{ mt: 0.5 }}
+            >
               {notification.time}
             </Typography>
-          </>
+          </React.Fragment>
         }
       />
     </ListItem>
   );
-
+  
   return (
-    <AppBar
-      position="fixed"
+    <AppBar 
+      position="fixed" 
       color="inherit"
       elevation={1}
-      sx={{
+      sx={{ 
         width: {
           xs: '100%',
-          md: `calc(100% - ${isMiniVariant ? sidebarWidth.collapsed : sidebarWidth.expanded}px)`
+          md: `calc(100% - ${isCollapsed ? SIDEBAR_WIDTH.collapsed : SIDEBAR_WIDTH.expanded}px)`
         },
         ml: {
           xs: 0,
-          md: isMiniVariant ? `${sidebarWidth.collapsed}px` : `${sidebarWidth.expanded}px`
+          md: isCollapsed ? `${SIDEBAR_WIDTH.collapsed}px` : `${SIDEBAR_WIDTH.expanded}px`
         },
         transition: theme.transitions.create(['width', 'margin'], {
           easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
+          duration: theme.transitions.duration.leavingScreen,
         }),
         bgcolor: 'background.paper',
         zIndex: theme.zIndex.drawer + 1,
       }}
     >
-      <Toolbar sx={{
+      <Toolbar sx={{ 
         justifyContent: 'space-between',
         minHeight: { xs: 64, sm: 70 },
         px: { xs: 2, sm: 3 }
@@ -168,7 +187,8 @@ const Topbar = ({
               <MenuIcon />
             </IconButton>
           )}
-
+          
+          {/* Notifications Badge */}
           <IconButton
             color="inherit"
             onClick={handleNotificationClick}
@@ -179,35 +199,51 @@ const Topbar = ({
             </Badge>
           </IconButton>
 
-          {/* Replacing Welcome message with School Name */}
-          <Typography
-            variant="h6"
-            sx={{
+          <Typography 
+            variant="h6" 
+            sx={{ 
               display: { xs: 'none', sm: 'block' },
-              fontWeight: 600,
-              color: 'primary.main',
-              ml: 1
+              fontWeight: 500
             }}
           >
-            {schoolName || 'Your School'}
+            Welcome, {user?.username}!
           </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Stack spacing={0.5} sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+        <Stack 
+          direction="row" 
+          spacing={2} 
+          alignItems="center"
+        >
+          <Stack 
+            spacing={0.5} 
+            sx={{ 
+              textAlign: 'right',
+              display: { xs: 'none', sm: 'block' }
+            }}
+          >
+            <Typography 
+              variant="subtitle2" 
+              sx={{ fontWeight: 500 }}
+            >
               {user?.username} ({user?.role})
             </Typography>
             {currentTerm && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  opacity: 0.8,
+                  color: 'text.secondary'
+                }}
+              >
                 Current Term: {currentTerm.name}
               </Typography>
             )}
           </Stack>
-
-          <Avatar
-            sx={{
-              width: 40,
+          
+          <Avatar 
+            sx={{ 
+              width: 40, 
               height: 40,
               bgcolor: theme.palette.primary.main,
               color: theme.palette.primary.contrastText
@@ -217,7 +253,7 @@ const Topbar = ({
           </Avatar>
         </Stack>
 
-        {/* Notification Popover */}
+        {/* Notifications Panel */}
         <Popover
           open={open}
           anchorEl={anchorEl}
@@ -238,10 +274,10 @@ const Topbar = ({
             }
           }}
         >
-          <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between' }}>
+          <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6">Notifications</Typography>
-            <Button
-              size="small"
+            <Button 
+              size="small" 
               onClick={handleMarkAllRead}
               disabled={unreadCount === 0}
             >
@@ -258,7 +294,7 @@ const Topbar = ({
             ))}
             {notifications.length === 0 && (
               <ListItem>
-                <ListItemText
+                <ListItemText 
                   primary="No notifications"
                   sx={{ textAlign: 'center', color: 'text.secondary' }}
                 />

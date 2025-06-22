@@ -2,6 +2,7 @@
 //Usage: node src/seedutils/seedPayments.js <schoolId>
 //Example: node src/seedutils/seedPayments.js 1
 require('dotenv').config();
+console.log('Database URL:', process.env.DATABASE_URL);
 const prisma = require('../utils/prismaClient');
 const calculateStudentBalance = require('../utils/CalculateFeeBalance'); // Import the updated function
 const { randomUUID } = require('crypto');

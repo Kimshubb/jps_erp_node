@@ -48,3 +48,5 @@ public/manifest.json
 /backend/node_modules/    # Exclude backend's node_modules
 /prisma/migrations/       # If using Prisma migrations
 database.sqlite           # Example: SQLite file if generated locally
+
+**/node_modules/

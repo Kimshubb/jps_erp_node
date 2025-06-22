@@ -26,7 +26,4 @@ router.get('/grades-and-terms', authenticateToken, getGradesAndTerms);
 router.get('/search-student', authenticateToken, searchStudent);
 
 
-
-
-
 module.exports = router;
